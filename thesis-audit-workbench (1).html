@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thesis Audit Workbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#17212B; --ink-2:#46596B; --ink-3:#7B8C9B;
+  --paper:#E9EDEF; --surface:#FFFFFF; --surface-2:#F4F7F8;
+  --rule:#CFD8DE; --rule-soft:#E1E8EB;
+  --accent:#0F5E6B; --accent-hi:#14808F; --accent-soft:#DCEAEC;
+  --flag:#8C2F39; --flag-soft:#F4E3E4;
+  --hold:#9C6412; --hold-soft:#F7EDDA;
+  --clear:#2C6650; --clear-soft:#DEEAE4;
+  --display:"Spectral",Georgia,"Times New Roman",serif;
+  --body:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --rail:272px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--display);font-weight:600;line-height:1.2;margin:0}
+.label{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent-hi);outline-offset:2px;border-radius:2px}
+
+.topbar{position:sticky;top:0;z-index:40;background:var(--ink);color:#EAF0F2;border-bottom:1px solid #0B1119}
+.topbar-inner{max-width:1400px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.wordmark{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.wordmark .mark{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:#6FA8B2;text-transform:uppercase;white-space:nowrap}
+.wordmark .name{font-family:var(--display);font-size:19px;color:#F4F8F9;white-space:nowrap}
+.wordmark .thesis{font-size:12.5px;color:#93A7B2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:12px;border-left:1px solid #33414F}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+.savestate{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#93A7B2;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.savestate .dot{width:7px;height:7px;border-radius:50%;background:#3D5361}
+.savestate.dirty{color:#E8B77A}
+.savestate.dirty .dot{background:#D99B3F}
+
+.btn{font-family:var(--body);font-size:13px;font-weight:500;padding:7px 14px;border-radius:3px;cursor:pointer;border:1px solid var(--rule);background:var(--surface);color:var(--ink);transition:background .12s,border-color .12s,color .12s}
+.btn:hover{background:var(--surface-2);border-color:var(--ink-3)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hi);border-color:var(--accent-hi);color:#fff}
+.btn-ghost{background:transparent;border-color:#3D5361;color:#D6E2E6}
+.btn-ghost:hover{background:#22303C;border-color:#5A7383;color:#fff}
+.btn-sm{font-size:12px;padding:5px 10px}
+.btn-danger{color:var(--flag);border-color:#DCC3C5}
+.btn-danger:hover{background:var(--flag-soft);border-color:var(--flag)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:disabled:hover{background:var(--surface);border-color:var(--rule)}
+.btn-ghost:disabled:hover{background:transparent;border-color:#3D5361}
+
+.shell{max-width:1400px;margin:0 auto;display:flex;align-items:flex-start}
+nav.rail{width:var(--rail);flex:0 0 var(--rail);position:sticky;top:57px;align-self:flex-start;max-height:calc(100vh - 57px);overflow-y:auto;padding:26px 0 40px 22px}
+.rail-group{margin-bottom:26px}
+.rail-group>.label{padding-left:26px;margin-bottom:10px;display:block}
+.seq{position:relative;padding-left:26px}
+.seq::before{content:"";position:absolute;left:8px;top:12px;bottom:12px;width:1px;background:var(--rule)}
+.seq-item{position:relative;display:block;width:100%;text-align:left;background:none;border:0;padding:7px 10px 7px 0;font-family:var(--body);font-size:13.5px;color:var(--ink-2);cursor:pointer;line-height:1.35}
+.seq-item:hover{color:var(--ink)}
+.seq-item .node{position:absolute;left:-22px;top:11px;width:9px;height:9px;border-radius:50%;background:var(--paper);border:1.5px solid var(--rule-soft);box-shadow:0 0 0 3px var(--paper);transition:background .15s,border-color .15s}
+.seq-item .num{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-right:8px}
+.seq-item.touched .node{border-color:var(--accent);background:var(--accent-soft)}
+.seq-item.done .node{background:var(--accent);border-color:var(--accent)}
+.seq-item.active{color:var(--ink);font-weight:600}
+.seq-item.active .node{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--accent-soft)}
+.seq-item .cnt{font-family:var(--mono);font-size:10px;color:var(--flag);margin-left:6px}
+.rail-flat{padding-left:26px;display:flex;flex-direction:column;gap:2px}
+.flat-item{background:none;border:0;text-align:left;cursor:pointer;font-family:var(--body);font-size:13.5px;color:var(--ink-2);padding:6px 10px 6px 0;display:flex;align-items:center;gap:8px}
+.flat-item:hover{color:var(--ink)}
+.flat-item.active{color:var(--ink);font-weight:600}
+.pill{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:9px;background:var(--accent-soft);color:var(--accent)}
+.pill.warn{background:var(--flag-soft);color:var(--flag)}
+.pill.hold{background:var(--hold-soft);color:var(--hold)}
+main.stage{flex:1 1 auto;min-width:0;padding:26px 22px 90px}
+
+.card{background:var(--surface);border:1px solid var(--rule-soft);border-radius:4px;padding:26px 28px;margin-bottom:18px}
+.pass-head{margin-bottom:20px}
+.pass-eyebrow{display:flex;align-items:baseline;gap:12px;margin-bottom:8px}
+.pass-eyebrow .n{font-family:var(--mono);font-size:26px;color:var(--accent);line-height:1;letter-spacing:-.02em}
+.pass-eyebrow .of{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.pass-head h2{font-size:27px;letter-spacing:-.01em}
+.pass-head .lede{color:var(--ink-2);font-size:14.5px;margin-top:8px;max-width:66ch}
+
+.rationale{border-left:2px solid var(--accent);background:var(--accent-soft);padding:14px 18px;margin:18px 0 0;border-radius:0 3px 3px 0}
+.rationale .label{color:var(--accent);margin-bottom:6px;display:block}
+.rationale p{margin:0;font-family:var(--display);font-size:15.5px;line-height:1.5;color:#123E46;max-width:70ch}
+.rationale p+p{margin-top:9px}
+.rationale.correction{border-left-color:var(--flag);background:var(--flag-soft)}
+.rationale.correction .label{color:var(--flag)}
+.rationale.correction p{color:#5E1F27}
+
+.sec{margin-top:26px;padding-top:22px;border-top:1px solid var(--rule-soft)}
+.sec:first-child{margin-top:0;padding-top:0;border-top:0}
+.sec>h3{font-size:17px;margin-bottom:4px}
+.sec>.hint{color:var(--ink-2);font-size:13.5px;margin:0 0 14px;max-width:70ch}
+
+.field{margin-bottom:14px}
+.field>label,.field>.label{display:block;margin-bottom:5px}
+.field .sub{font-size:12.5px;color:var(--ink-3);margin:-1px 0 6px}
+input[type=text],textarea,select{width:100%;font-family:var(--body);font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:8px 11px}
+textarea{resize:vertical;min-height:84px;line-height:1.5}
+select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='7'><path d='M1 1l4 4 4-4' stroke='%237B8C9B' stroke-width='1.5' fill='none'/></svg>");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+input:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.prompt-wrap{border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:var(--surface-2)}
+.prompt-bar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--ink);color:#C9D8DD}
+.prompt-bar .label{color:#7FA9B3;margin-right:auto}
+.prompt-body{font-family:var(--mono);font-size:12.5px;line-height:1.65;padding:16px 18px;white-space:pre-wrap;word-break:break-word;max-height:430px;overflow-y:auto;color:#22303A}
+.copy-ok{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#8FD3B4}
+.locked{border-top:1px solid #33414F;background:#101923;color:#D8A96A;font-size:12.5px;padding:10px 14px;display:flex;gap:10px;align-items:center}
+.locked button{margin-left:auto}
+
+.tbl-scroll{overflow-x:auto;border:1px solid var(--rule-soft);border-radius:4px}
+table.ledger{width:100%;border-collapse:collapse;font-size:13px;min-width:720px;background:var(--surface)}
+table.ledger th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);text-align:left;font-weight:500;padding:9px 10px;background:var(--surface-2);border-bottom:1px solid var(--rule);vertical-align:bottom}
+table.ledger td{padding:5px 6px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+table.ledger tr:last-child td{border-bottom:0}
+table.ledger textarea{min-height:52px;font-size:13px;padding:6px 8px;border-color:transparent;background:transparent}
+table.ledger textarea:hover{border-color:var(--rule-soft);background:var(--surface)}
+table.ledger textarea:focus{border-color:var(--accent);background:var(--surface)}
+table.ledger input[type=text]{font-size:13px;padding:6px 8px;border-color:transparent;background:transparent}
+table.ledger input[type=text]:hover{border-color:var(--rule-soft);background:var(--surface)}
+table.ledger select{font-size:12.5px;padding:6px 24px 6px 8px;background-position:right 7px center}
+td.rm{width:34px;text-align:center;padding-top:11px}
+.iconbtn{background:none;border:0;cursor:pointer;color:var(--ink-3);font-family:var(--mono);font-size:14px;line-height:1;padding:4px 6px;border-radius:3px}
+.iconbtn:hover{color:var(--flag);background:var(--flag-soft)}
+.st-complete{color:var(--clear)}
+.st-partial,.st-unclear{color:var(--hold)}
+.st-missing{color:var(--flag)}
+
+.finding{background:var(--surface);border:1px dashed var(--rule);border-left:3px dashed var(--hold);border-radius:4px;margin-bottom:14px}
+.finding.resolved{border-style:solid;border-left-width:3px}
+.finding.d-revise{border-left-color:var(--flag)}
+.finding.d-investigate{border-left-color:var(--hold)}
+.finding.d-dismissed{border-left-color:var(--ink-3);opacity:.82}
+.finding-head{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;cursor:pointer}
+.finding-head:hover{background:var(--surface-2)}
+.finding-head .ttl{flex:1 1 auto;min-width:0;font-weight:500;font-size:14.5px}
+.finding-head .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase;margin-top:3px;font-weight:400;display:block}
+.stamp{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;padding:3px 8px;border-radius:2px;white-space:nowrap;border:1px solid}
+.stamp.open{color:var(--hold);border-color:var(--hold);background:var(--hold-soft)}
+.stamp.revise{color:var(--flag);border-color:var(--flag);background:var(--flag-soft)}
+.stamp.investigate{color:var(--hold);border-color:var(--hold);background:var(--hold-soft)}
+.stamp.dismissed{color:var(--ink-2);border-color:var(--rule);background:var(--surface-2)}
+.chev{color:var(--ink-3);font-family:var(--mono);font-size:12px;padding-top:2px}
+.finding-body{padding:4px 18px 20px;border-top:1px solid var(--rule-soft)}
+.gate{background:var(--surface-2);border:1px solid var(--rule-soft);border-radius:4px;padding:18px 20px;margin-top:18px}
+.gate-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+.gate-head h4{font-size:15.5px}
+.gate .hint{font-size:13px;color:var(--ink-2);margin:0 0 16px;max-width:66ch}
+.gate-q{margin-bottom:15px}
+.gate-q>.q{font-family:var(--display);font-size:15px;font-weight:500;display:flex;gap:9px;margin-bottom:6px}
+.gate-q>.q .qn{font-family:var(--mono);font-size:11px;color:var(--accent);padding-top:4px}
+.gate-status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 0 0;margin-top:16px;border-top:1px solid var(--rule)}
+.gate-status .msg{font-size:13px;color:var(--ink-2);margin-right:auto}
+.gate-status .msg.ready{color:var(--clear)}
+
+.empty{text-align:center;padding:44px 24px;color:var(--ink-2);border:1px dashed var(--rule);border-radius:4px;background:var(--surface)}
+.empty h3{font-size:18px;margin-bottom:6px}
+.empty p{margin:0 auto 16px;max-width:48ch;font-size:14px}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chip{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;padding:5px 11px;border-radius:14px;border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);cursor:pointer}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+.readings{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.reading{border:1px solid var(--rule-soft);border-radius:4px;overflow:hidden}
+.reading .rh{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:7px 11px;background:var(--surface-2);border-bottom:1px solid var(--rule-soft);color:var(--ink-2)}
+.reading textarea{border:0;border-radius:0;min-height:120px;font-size:13px}
+.reading textarea:focus{box-shadow:none;border:0}
+.verdict{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.vopt{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--rule);border-radius:4px;padding:11px 14px;cursor:pointer;background:var(--surface)}
+.vopt:hover{border-color:var(--ink-3)}
+.vopt input{margin:3px 0 0}
+.vopt .vt{font-weight:500;font-size:14px;display:block}
+.vopt .vd{font-size:13px;color:var(--ink-2);margin-top:1px;display:block}
+.vopt.sel{border-color:var(--accent);background:var(--accent-soft)}
+
+.note{border:1px solid var(--rule);border-left:2px solid var(--ink-3);background:var(--surface-2);border-radius:0 3px 3px 0;padding:14px 18px;font-size:13.5px;color:var(--ink-2);max-width:78ch}
+.note strong{color:var(--ink)}
+.note.warn{border-left-color:var(--hold);background:var(--hold-soft);color:#5F3E0B}
+.note.warn strong{color:#4A300A}
+.note.stop{border-left-color:var(--flag);background:var(--flag-soft);color:#5E1F27}
+.note.stop strong{color:#4A171E}
+.row-end{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:16px}
+.spacer{flex:1 1 auto}
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule-soft);border:1px solid var(--rule-soft);border-radius:4px;overflow:hidden;margin-bottom:18px}
+.stat{background:var(--surface);padding:14px 16px}
+.stat .v{font-family:var(--mono);font-size:24px;color:var(--ink);line-height:1.1}
+.stat .k{margin-top:4px}
+.stat.flagv .v{color:var(--flag)}
+.stat.holdv .v{color:var(--hold)}
+.stat.clearv .v{color:var(--clear)}
+
+/* pre-flight */
+.pf{border:1px solid var(--rule-soft);border-radius:4px;margin-bottom:12px;overflow:hidden}
+.pf-h{display:flex;gap:12px;align-items:flex-start;padding:15px 18px;background:var(--surface-2);border-bottom:1px solid var(--rule-soft)}
+.pf-h .pfn{font-family:var(--mono);font-size:12px;color:var(--accent);padding-top:3px}
+.pf-h h4{font-size:16px;flex:1 1 auto}
+.pf-b{padding:15px 18px}
+.pf-b p{margin:0 0 12px;font-size:13.5px;color:var(--ink-2);max-width:74ch}
+.pf.ok{border-left:3px solid var(--clear)}
+.pf.na{border-left:3px solid var(--ink-3)}
+.pf.bad{border-left:3px solid var(--flag)}
+.pf.none{border-left:3px solid var(--hold)}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);background:var(--ink);color:#EAF0F2;padding:10px 18px;border-radius:4px;font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:80}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:1000px){
+  :root{--rail:100%}
+  .shell{flex-direction:column}
+  nav.rail{position:static;width:100%;max-height:none;padding:18px 22px 0;border-bottom:1px solid var(--rule)}
+  .rail-group{margin-bottom:16px}
+  .readings,.grid2{grid-template-columns:1fr}
+  .stat-strip{grid-template-columns:1fr 1fr}
+  .card{padding:20px 18px}
+  .wordmark .thesis{display:none}
+}
+/* Embedded in a host page with ?embed=flow — the parent scrolls, so nothing sticks */
+.framed .topbar{position:static}
+.framed nav.rail{position:static;max-height:none;overflow:visible}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{.topbar,nav.rail,.no-print{display:none!important}body{background:#fff}.card{border:0;padding:0}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="wordmark">
+      <span class="mark">Doctoral</span>
+      <span class="name">Thesis Audit Workbench</span>
+      <span class="thesis" id="thesisChip"></span>
+    </div>
+    <div class="topbar-actions">
+      <span class="savestate" id="saveState"><span class="dot"></span><span id="saveText">Saved</span></span>
+      <button class="btn btn-ghost btn-sm" id="btnLoad">Open audit</button>
+      <button class="btn btn-primary btn-sm" id="btnSave">Save audit</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+  <nav class="rail" aria-label="Audit sections">
+    <div class="rail-group"><span class="label">Before you start</span><div class="rail-flat" id="navSetup"></div></div>
+    <div class="rail-group"><span class="label">The seven passes</span><div class="seq" id="navPasses"></div></div>
+    <div class="rail-group"><span class="label">Across the audit</span><div class="rail-flat" id="navEnd"></div></div>
+  </nav>
+  <main class="stage" id="stage"></main>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="fileIn" accept=".json,application/json" style="display:none">
+
+<script>
+"use strict";
+
+/* ============================================================
+   SHARED PROMPT PREAMBLE
+   ============================================================ */
+
+const PREAMBLE =
+`You are assisting with a structured audit of a doctoral thesis. Follow these rules throughout.
+
+1. Present evidence before judgement. Extract and quote first; assess afterwards.
+2. Make every row indexical. Each item you return must carry the relevant wording and a location — chapter, section, page or paragraph — so that I can return to the manuscript and check it.
+3. Where wording matters — definitions, central claims, contribution statements — reproduce the wording exactly rather than paraphrasing it.
+4. Do not infer a missing logical step merely because you can see how the author could have made it. Identify where that step needs to be made explicit.
+5. If you cannot find something, write "I cannot locate this" and say where you looked. Do not conclude that it is absent.
+6. Do not treat the absence of a problem as the absence of problems. If you have searched and found nothing, say that you found nothing, not that there is nothing.
+7. Produce candidate problems accompanied by evidence, not verdicts. The judgement is mine to make.
+8. Do not repair, smooth over or complete the argument on my behalf.`;
+
+/* ============================================================
+   PRE-FLIGHT
+   ============================================================ */
+
+const PREFLIGHT = [
+  {k:"data", n:1, q:"Where does the data go?",
+   body:`At the Open University, students may upload their work provided they are logged into Microsoft Copilot with their student account and the green shield indicating Enterprise Data Protection is visible. That means the material is not retained and is not used for training. Students at other institutions should consult their own university's policies rather than assuming an equivalent arrangement exists — consumer and enterprise deployments of the same underlying model can differ materially in how they handle uploaded content.`,
+   ask:"Which service will you use, and what does your institution's policy say about it?",
+   ph:"e.g. Microsoft Copilot, signed in with student account, Enterprise Data Protection shield visible."},
+  {k:"ethics", n:2, q:"Does the ethics approval extend this far?",
+   body:`A thesis containing interview transcripts, survey responses or other participant data was collected under an approval, and under a participant information sheet that told those participants how their data would be processed. Enterprise Data Protection addresses the security of processing. It does not retrospectively widen the consent that was given. Before uploading empirical chapters, check what the approval and the information sheet actually say, and consider whether the audit can be run on anonymised or redacted versions of the data-bearing sections.`,
+   ask:"What do the approval and the participant information sheet actually say, and which chapters are affected?",
+   ph:"e.g. Chapters 4–5 contain interview extracts. Information sheet limits processing to the research team. Will run those chapters on redacted versions."},
+  {k:"third", n:3, q:"Is any of the material subject to a third-party constraint?",
+   body:`Industrially sponsored and collaborative studentships, non-disclosure agreements, commercially sensitive data and embargoed chapters all sit outside the institutional question entirely. A tenant boundary does not override a contractual one.`,
+   ask:"Which constraints apply, and to which material?",
+   ph:"e.g. No NDA. Or: sponsor agreement covers the Chapter 6 case data — excluded from the audit."},
+  {k:"declare", n:4, q:"Does this use need to be declared?",
+   body:`Whether a use is permitted and whether it must be declared in the final submission are separate matters, and doctoral regulations on AI declaration are changing quickly and vary considerably between institutions. It is entirely possible to use an LLM in a way the university permits and still encounter difficulty for not having declared it. Establish the declaration requirement before starting the work, not after finishing it.`,
+   ask:"What does your institution require you to declare, and where did you check?",
+   ph:"e.g. Research degrees handbook §7.4 requires a statement of AI use in the preface. Confirmed with supervisor on [date]."}
+];
+const PF_STATES = ["","Resolved — I may proceed","Not applicable","Resolved — proceeding with restrictions","Unresolved — I must not proceed yet"];
+
+/* ============================================================
+   PASSES
+   ============================================================ */
+
+const PASSES = [
+  {
+    id:"p1", n:1, key:"Argument extraction",
+    lede:"Make the argumentative architecture of a chapter visible, and checkable, before anything is evaluated.",
+    rationale:[
+      "A summary can make an argument appear coherent precisely because it removes the small inconsistencies, qualifications and shifts in terminology that need to be examined. Summarisation is useful for orientation and potentially damaging for diagnosis.",
+      "The essential difference between extraction and summary is not that one compresses and the other does not. Extraction compresses too, and a well-formed table can lend an appearance of clean architecture to prose that was in fact rather fluid. The difference is that extraction can be indexical and a summary cannot. Every row should carry the relevant wording and a location, so that you can return to the manuscript and check it."
+    ],
+    fields:[
+      {k:"chapter", t:"text", label:"Chapter", sub:"e.g. Chapter 4, or Chapter 2, sections 2.3–2.6", ph:"Chapter 4"},
+      {k:"role", t:"text", label:"What this chapter is supposed to do", sub:"Optional. Stating the intended job lets later passes test whether it was done.", ph:"Establish the theoretical framework and derive the propositions"}
+    ],
+    build:f=>[PREAMBLE,"",
+`TASK: Extract the argument of ${f.chapter||"[chapter]"}. Do not summarise it.`,
+f.role?`The chapter is intended to: ${f.role}. Do not assume it succeeds at this.`:"",
+"",
+`Produce eight tables, one per element. Every row must carry (a) the relevant wording, quoted where wording matters, and (b) a location — section, page or paragraph. A row without a location is not usable; omit it and say why.`,
+"",
+`1. MAJOR CLAIMS — claims the chapter asks the reader to accept.`,
+`2. DEFINITIONS — important constructs and the exact wording used to define them. Quote verbatim.`,
+`3. ASSUMPTIONS — what is treated as given rather than demonstrated.`,
+`4. EVIDENCE — evidence offered for each major claim. Map evidence to claim.`,
+`5. DEPENDENCIES — claims that depend on something established elsewhere. Name what is depended upon.`,
+`6. FORWARD REFERENCES — statements promising that something will be demonstrated later. Quote the promise.`,
+`7. QUALIFICATIONS — boundary conditions, caveats and exceptions.`,
+`8. CONTRIBUTION CLAIMS — statements about originality, significance or contribution. Quote verbatim.`,
+"",
+`Do not tidy the argument as you extract it. If the prose is fluid, ambiguous or repetitive, the tables should show that rather than resolve it. Where you are unsure whether something belongs in a row, include it and mark it uncertain.`,
+"",
+`Then, and only after the tables are complete, list observations of these kinds, each pointing to the rows that produced it:`,
+`- the same construct defined differently in different places;`,
+`- a conclusion resting on an assumption that is never defended;`,
+`- a claim whose listed evidence appears not to establish it;`,
+`- apparently different propositions that are repetitions of one underlying claim;`,
+`- a qualification present in one part of the chapter and absent where the claim is used.`,
+"",
+`Present each observation as a candidate for me to investigate, with its evidence attached. Do not decide whether it is a genuine problem.`,
+"",
+`Finally, state what you were unable to do: passages you could not parse, sections you may have covered less thoroughly, and anything about the length or structure of the input that may have degraded your coverage.`
+    ].filter(x=>x!==undefined).join("\n"),
+    keepExtracts:true
+  },
+
+  {
+    id:"p2", n:2, key:"Commitment audit",
+    lede:"Turn every promise into a ledger — and treat the ledger as incomplete.",
+    rationale:[
+      "Human readers naturally remember the broad trajectory of an argument while forgetting individual promises made many pages earlier. A machine can search repeatedly for the explicit textual traces, and can do so consistently across a long document."
+    ],
+    correction:[
+      "It is tempting to assume that an LLM is well suited to this task because the work is repetitive rather than intellectually demanding. That assumption is close to backwards. Current models are strong at fluent evaluative judgement and comparatively weak at exhaustive enumeration across long documents. Recall degrades as context lengthens, and it degrades quietly: the model does not report that it has stopped finding things.",
+      "A false positive — a flagged commitment that was in fact discharged — is visible and self-correcting. A false negative — a commitment the ledger never lists at all — is invisible. There is nothing to check. And the natural reading of a ledger that comes back clean is reassurance, which is the one conclusion this method cannot support.",
+      "The ledger is a hypothesis generator. It is not a clearance certificate."
+    ],
+    fields:[
+      {k:"handList", t:"textarea", label:"Commitments you have enumerated by hand", sub:"Research questions, objectives, hypotheses and stated contributions are almost always short, explicit and easy to list manually from the front matter and introduction. Compile that list yourself. One per line, with where it is stated.", ph:"RQ1: How does … (Ch.1, p.12)\nRQ2: To what extent … (Ch.1, p.12)\nObjective 3: To develop … (Ch.1, p.14)\nContribution claim: This thesis extends … (Ch.1, p.18)"},
+      {k:"scope", t:"text", label:"Where the discharge should be searched for", sub:"", ph:"Chapters 4–8"}
+    ],
+    build:f=>{
+      const hand=(f.handList||"").trim();
+      return [PREAMBLE,"",
+`TASK: Locate the discharge of a set of doctoral commitments across ${f.scope||"the thesis"}.`,
+"",
+hand
+ ? `PART A — the commitments below were enumerated by hand. This list is authoritative. Do not add to it, do not merge entries, and do not silently drop any. Return exactly one ledger row per line.\n"""\n${hand}\n"""`
+ : `PART A — I have not yet supplied a hand-enumerated list. Before using this prompt, compile one yourself from the front matter and introduction: research questions, objectives, hypotheses and stated contributions. That enumeration is where completeness matters most and is where the model is weakest.`,
+"",
+`For each commitment, produce a ledger row:`,
+`  Commitment (quoted) | Where stated | What would count as fulfilment | Where fulfilled | Evidence | Status`,
+"",
+`State the fulfilment test before you look for the answer. Be concrete: name what would have to appear in the text.`,
+`Status must be exactly one of: Discharged / Partial / Cannot locate / Altered without explanation.`,
+`Use "Cannot locate" rather than "Not discharged". Where you mark Partial or Altered, quote the wording that differs.`,
+"",
+`PART B — separately, search ${f.scope||"the thesis"} for additional promissory statements not on my list: promises about later chapters, methodological commitments, theoretical claims said to be established later, promised analyses, stated limitations said to be addressed. Mark every row from this part as MODEL-FOUND so I can see which entries did not come from my own enumeration.`,
+"",
+`PART C — report on your own coverage, honestly and specifically:`,
+`- roughly how much of the supplied text you were able to search attentively;`,
+`- where in the input your attention was thinnest;`,
+`- whether the length of the input is likely to have caused you to stop finding things;`,
+`- what would improve your recall if I ran this again.`,
+"",
+`Do not conclude that all commitments have been discharged. That conclusion is not available from this procedure. If you found no problems, say that you found none — not that there are none.`
+      ].join("\n");
+    },
+    ledger:{
+      k:"commitments", title:"Commitment ledger",
+      hint:"Transcribe the rows worth keeping. Mark which came from your own enumeration and which the model found — the difference matters when you judge how much weight the ledger can bear.",
+      cols:[
+        {k:"commitment", h:"Commitment", w:"20%"},
+        {k:"source", h:"Source", w:"11%", type:"select", opts:["","Hand-enumerated","Model-found"]},
+        {k:"stated", h:"Where stated", w:"9%"},
+        {k:"test", h:"What would count as fulfilment", w:"17%"},
+        {k:"where", h:"Where fulfilled", w:"9%"},
+        {k:"evidence", h:"Evidence", w:"17%"},
+        {k:"status", h:"Status", w:"17%", type:"select", opts:["","Discharged","Partial","Cannot locate","Altered without explanation"]}
+      ]
+    },
+    custom:"spotcheck"
+  },
+
+  {
+    id:"p3", n:3, key:"Backwards audit",
+    lede:"Start at a final claim and work back to what would have had to be established for it to be warranted.",
+    rationale:[
+      "Most students construct and repeatedly read their thesis forwards, which creates a powerful sense of narrative continuity. Each chapter seems to grow naturally from the preceding one. But coherence felt while moving forwards is not the same as argumentative sufficiency.",
+      "That map exposes a common doctoral weakness: a thesis may contain all of the relevant ingredients without demonstrating the logical connection among them strongly enough to support what is eventually claimed. Backward reading asks a more demanding question than whether the thesis tells a coherent story. It asks whether the thesis has earned the right to make its final claims."
+    ],
+    fields:[
+      {k:"claim", t:"textarea", label:"Paste one concluding claim, in its exact wording", sub:"Take it verbatim from the conclusion or discussion. Run this pass once per major claim.", ph:"The study demonstrates that X is an important mechanism explaining Y."}
+    ],
+    build:f=>[PREAMBLE,"",
+`TASK: Conduct a backwards audit of a single concluding claim.`,
+"",
+`THE CLAIM, as written in the thesis:`,`"""`,`${f.claim||"[paste the exact wording of the concluding claim]"}`,`"""`,
+"",
+`Step 1. Before looking at the rest of the thesis, decompose the claim. State precisely what it asserts, including the strength of the assertion. Note every word carrying analytical weight — "demonstrates" rather than "suggests", "mechanism" rather than "association".`,
+"",
+`Step 2. List what would have needed to be established earlier for this claim to be warranted. Derive this from the claim itself, not from what the thesis happens to contain. Cover at least:`,
+`- where each construct is defined, and whether that definition supports this use;`,
+`- what evidence establishes that each element occurred or exists;`,
+`- what evidence connects them in the way the claim asserts;`,
+`- what alternative explanations would have to be excluded;`,
+`- what analytical step licenses the specific strength of wording used;`,
+`- where the relevant limitations are addressed.`,
+"",
+`Step 3. For each requirement, search the thesis and report where it is established, the evidence with its location, and whether what you found meets the requirement you set in Step 2. Where it does not, quote both the requirement and what the text actually provides.`,
+"",
+`Step 4. State whether the wording of the claim exceeds the strength of the earlier evidence, and quote the specific words that carry more weight than the evidence supports. Show the evidence before stating the conclusion.`,
+"",
+`Step 5. Note any requirement you were unable to search for properly, and why.`
+    ].join("\n"),
+    ledger:{
+      k:"foundation", title:"Claim-to-foundation map",
+      hint:"One row per requirement the claim depends on.",
+      cols:[
+        {k:"claim", h:"Claim", w:"20%"},
+        {k:"requirement", h:"What must have been established", w:"24%"},
+        {k:"where", h:"Where established", w:"13%"},
+        {k:"evidence", h:"Evidence found", w:"25%"},
+        {k:"status", h:"Sufficient?", w:"18%", type:"select", opts:["","Established","Partial","Cannot locate","Wording exceeds evidence"]}
+      ]
+    }
+  },
+
+  {
+    id:"p4", n:4, key:"Long-range consistency",
+    lede:"Compare non-adjacent parts of the thesis directly, working from extracts where the full text will not fit.",
+    rationale:[
+      "A construct introduced in Chapter 2 shifts slightly in Chapter 3. The operationalisation in Chapter 4 introduces another small shift. By Chapter 7 it may no longer mean what it meant when the theoretical argument was developed. Every individual transition appears reasonable. The cumulative movement may not be."
+    ],
+    correction:[
+      "A complete thesis may exceed what can be held in a single context, and if the chapters are processed separately then the direct comparison this pass depends on has not actually taken place. Where the full text will not fit, extract the relevant passages first — using Pass 1 — and run the comparison over the extracts rather than the chapters. That also makes the comparison auditable, since the extracts carry their locations.",
+      "The recall caution from Pass 2 applies here too. \"Every substantive definition\" is an instruction the model will attempt and may not complete."
+    ],
+    fields:[
+      {k:"a", t:"text", label:"First location", ph:"Chapter 2"},
+      {k:"b", t:"text", label:"Second location", ph:"Chapter 7"},
+      {k:"construct", t:"text", label:"Construct or element to trace", sub:"Optional. Leave blank to sweep all five kinds of drift at once.", ph:"psychological ownership"},
+      {k:"mode", t:"select", label:"What you are giving the model",
+        opts:["Full text of both locations, in a single context","Extracts from Pass 1, each carrying its location"]}
+    ],
+    build:f=>{
+      const a=f.a||"[first location]", b=f.b||"[second location]";
+      const extracts = f.mode==="Extracts from Pass 1, each carrying its location";
+      const L=[PREAMBLE,"",
+`TASK: Compare ${a} directly with ${b}. Do not work through the intervening chapters. The point is to expose cumulative movement that sequential reading conceals.`,""];
+      L.push(extracts
+        ? `I am supplying extracts rather than full chapters, each carrying its location. Work only from what I have supplied. Do not speculate about what the omitted text might contain, and do not treat the extracts as a complete record of either location.`
+        : `I am supplying the full text of both locations in a single context. If you cannot hold both attentively at once, say so before you begin rather than producing a comparison that was not actually made.`);
+      L.push("");
+      if(f.construct){
+        L.push(
+`Trace the construct: ${f.construct}.`,"",
+`Step 1. Extract every substantive definition or characterisation of ${f.construct} from ${a} and from ${b}. Quote each passage in full with its location. Extract everything before comparing anything.`,"",
+`Step 2. Place the passages side by side in a table and identify differences in attributes, causal role, scope, boundary conditions, and the strength of language used.`,"",
+`Step 3. Only now, describe the movement between the two. Describe what changed. Do not decide whether the change is problematic.`);
+      } else {
+        L.push(
+`Step 1. Extract the relevant passages from both locations before comparing anything. Quote them with locations.`,"",
+`Step 2. Compare them under each heading, in a table, with the quoted passages side by side:`,
+`- DEFINITIONAL DRIFT: has a key concept changed meaning?`,
+`- THEORETICAL DRIFT: is the theoretical position used to interpret the findings the same one established earlier?`,
+`- METHODOLOGICAL DRIFT: are claims made that the stated research design was capable of supporting?`,
+`- EVIDENTIAL DRIFT: have qualified findings become categorical claims?`,
+`- CONTRIBUTION DRIFT: is the contribution claimed the same one the thesis set out to make?`,"",
+`Step 3. Only now, describe the movement under each heading. Describe what changed. Do not decide whether the change is problematic.`);
+      }
+      L.push("",
+`Every difference you report must appear alongside the quoted evidence from both locations. A difference reported without both passages quoted is not usable.`,"",
+`Finally: I have asked you to find every relevant passage. State plainly whether you believe you found them all, where your coverage was thinnest, and what you may have missed. Do not report completeness you cannot vouch for.`);
+      return L.join("\n");
+    },
+    ledger:{
+      k:"drift", title:"Drift log",
+      hint:"Record the movement, then classify it yourself. Not all drift is inconsistency.",
+      cols:[
+        {k:"element", h:"Element", w:"14%"},
+        {k:"early", h:"Earlier wording", w:"24%"},
+        {k:"late", h:"Later wording", w:"24%"},
+        {k:"type", h:"Type", w:"17%", type:"select", opts:["","Definitional","Theoretical","Methodological","Evidential","Contribution"]},
+        {k:"verdict", h:"Your reading", w:"21%", type:"select", opts:["","Inconsistency","Legitimate development","Different emphasis","Undecided"]}
+      ]
+    }
+  },
+
+  {
+    id:"p5", n:5, key:"Examiner challenge",
+    lede:"Ask for the strongest case against the thesis — then discount its enthusiasm.",
+    rationale:[
+      "A doctoral student has usually spent several years making the strongest possible case for the thesis, and by the final stages knows how the argument is intended to work. An adversarial pass is useful precisely because the model is instructed not to repair the argument on the author's behalf.",
+      "The LLM is not being asked to play the caricature of a hostile examiner. It is being used to create structured intellectual resistance — which is often more valuable than another agreeable reading, provided it is not mistaken for a verdict."
+    ],
+    correction:[
+      "Adversarial framing is not more truthful than confirmatory framing. The reason a request for confirmation is unreliable is that the model tends to supply what the framing requests, and that tendency does not disappear when the framing is reversed. Ask for the three weakest points in a chapter and you will receive three, whether or not three exist.",
+      "Adversarial prompting has not removed the bias. It has pointed it in a direction that is cheaper to check — an unwarranted criticism costs you the time taken to reject it, whereas unwarranted reassurance costs a viva. That is a real advantage, and it is the only advantage. It is not a claim to accuracy."
+    ],
+    fields:[
+      {k:"target", t:"select", label:"Target", opts:["The research gap","Theoretical reasoning","Methodological fit","Evidential sufficiency","Interpretation of findings","The contribution"]},
+      {k:"scope", t:"text", label:"Where to look", sub:"Restricting the model to one chapter makes the challenge sharper.", ph:"Chapter 2 only"},
+      {k:"level", t:"select", label:"Level", opts:[
+        "Chapter level — does the chapter accomplish the task assigned to it?",
+        "Sentence level — does this inference follow from the previous statement?",
+        "Section level — does the evidence justify the subsection conclusion?",
+        "Thesis level — does the complete argument support the contribution claimed?"]}
+    ],
+    build:f=>{
+      const t=f.target||"The research gap", scope=f.scope||"the material provided";
+      const specific={
+        "The research gap":`Assume an examiner believes the claimed research gap is overstated. Construct the strongest case for that position using only ${scope}.`,
+        "Theoretical reasoning":`Identify the places in ${scope} where the theoretical reasoning is most vulnerable to the claim that the conclusion does not follow from what precedes it.`,
+        "Methodological fit":`Assume an examiner believes the research design was not capable of supporting the claims made from it. Construct the strongest case for that position using only ${scope}.`,
+        "Evidential sufficiency":`Identify the places in ${scope} where the argument is most vulnerable to the claim that the conclusion does not follow from the evidence presented.`,
+        "Interpretation of findings":`Assume an examiner believes the findings admit a different and equally defensible interpretation. Construct that alternative using only the evidence in ${scope}.`,
+        "The contribution":`Assume an examiner believes the result is interesting but already implicit in existing literature. Construct the strongest case for that position using only ${scope}.`
+      }[t];
+      return [PREAMBLE,"",
+`TASK: Adversarial reading. ${specific}`,
+"",
+`Work at this level: ${f.level||"Chapter level — does the chapter accomplish the task assigned to it?"}`,
+"",
+`Do not return a fixed number of objections. Return as many as the text actually supports and no more. If it supports none, say so.`,
+"",
+`Rules for this task, in addition to those above:`,
+`- Do not soften the challenge, offer reassurance, or list the strengths of the work.`,
+`- Do not repair the argument on my behalf. Where a step is missing, say it needs to be explicit; do not supply it.`,
+`- Every criticism must cite specific passages, quoted with a location. An objection that cites no passage cannot be evaluated — omit it rather than including it unsupported.`,
+"",
+`CALIBRATION — this part is not optional, and I will read the objections through it:`,
+`- Rank the objections by strength, strongest first.`,
+`- For each, say whether it is SUBSTANTIVE (the argument has a real problem) or PRESENTATIONAL (the argument may be sound but is not visible enough to a reader who lacks my knowledge of it).`,
+`- For each, state plainly how strong you consider it, and say so directly where you consider an objection weak. I would rather have three objections of which you call two weak than three presented as equally serious.`,
+`- If you consider that this material has no serious vulnerability on the target I have named, say that explicitly. I am asking for an accurate reading, not a quota of criticism.`,
+"",
+`For each objection give: (a) the challenge in one sentence, as an examiner would put it; (b) the passages it rests on, quoted with locations; (c) what would have to be present in the thesis to answer it; (d) whether anything in ${scope} already answers it.`
+      ].join("\n");
+    }
+  },
+
+  {
+    id:"p6", n:6, key:"Independent-reading test",
+    lede:"Run one tightly specified question repeatedly — but establish a noise floor first.",
+    rationale:[
+      "If three readings independently identify essentially the same claim, that provides some evidence that the claim is clearly signalled. If they identify substantially different claims, the useful question is not which answer is correct, but why the chapter was capable of supporting three different readings. If several machine readings diverge, human readers may also diverge."
+    ],
+    correction:[
+      "Divergence has more than one cause, and the raw comparison cannot distinguish between them. Output varies because of sampling behaviour, because of what else is in the context, because of the model version, and because of the exact wording of the prompt — not only because the manuscript is ambiguous. A perfectly clear chapter can produce three different \"central theoretical claims\" simply because \"central\" was never defined.",
+      "Treating all divergence as evidence about the thesis would be exactly the kind of unfalsifiable inference this method exists to catch. The proposition survives, but only with a control: hold everything constant except the manuscript, specify the question tightly, and establish a baseline on a text you have independent reason to believe is clearly argued. Whatever divergence that produces is the method's noise floor. Only divergence above that floor is evidence about your own writing."
+    ],
+    fields:[
+      {k:"question", t:"select", label:"Question to test", sub:"Each of these is tightly specified on purpose. An underspecified question generates divergence on its own.", opts:[
+        "Identify the single claim this chapter asks the reader to accept, quoting the sentence in which it is most directly stated.",
+        "Identify the gap in existing knowledge this text claims to address, quoting the sentence that states it most directly.",
+        "State what the central construct is defined to mean here, quoting the defining wording.",
+        "State how the two principal theories used here are said to relate to one another, quoting the passage that establishes it.",
+        "State the explanation offered for the principal empirical result, quoting the sentence that offers it.",
+        "State the principal contribution claimed, quoting the sentence in which it is claimed.",
+        "State the function this chapter performs in the overall argument, quoting the passage that indicates it."]},
+      {k:"scope", t:"text", label:"Your material", sub:"Identical in all three of your runs.", ph:"Chapter 5"},
+      {k:"conditions", t:"text", label:"Fixed conditions", sub:"Same model, same version, same settings, no prior context. If any of these change between runs the comparison is uninterpretable.", ph:"Copilot (GPT-5), default settings, new chat each run, 17 Aug 2026"}
+    ],
+    build:f=>[PREAMBLE,"",
+`TASK: Answer one question about the material supplied.`,
+"",
+`QUESTION: ${f.question||"[question]"}`,
+"",
+`Answer in no more than 150 words. State the answer directly, then quote the passage that led you to it, with its location.`,
+"",
+`Do not hedge across several possible answers, and do not offer alternatives. Give the single answer you find best supported.`,
+"",
+`———`,
+`RUN THIS AT LEAST THREE TIMES, in a new empty conversation each time, with no memory of the others. Paste identical material and an identical prompt each time. Do not ask the model to revise, reconcile or improve on a previous answer.`,
+`Run the identical procedure on your baseline text first. Everything except the manuscript must be held constant: ${f.conditions||"[state the fixed conditions]"}.`
+    ].join("\n"),
+    custom:"readings"
+  },
+
+  {
+    id:"p7", n:7, key:"Contribution audit",
+    lede:"Audit what the thesis claims to contribute, separately from whether it hangs together.",
+    rationale:[
+      "A thesis can be coherent without making a sufficient doctoral contribution. Coherence asks whether the components fit together. Contribution asks whether, having fitted them together, the thesis has produced something sufficiently original, significant and defensible.",
+      "Contribution claims often become stronger during the final stages of writing. A finding initially described cautiously may gradually become a theoretical contribution through repeated revision. Do not ask the model whether the contribution is sufficient for a PhD — that is a disciplinary judgement for appropriately qualified human examiners and supervisors."
+    ],
+    fields:[
+      {k:"contribution", t:"textarea", label:"Paste one contribution claim, in its exact wording", sub:"Run this pass once per claimed contribution.", ph:"This thesis contributes to the literature on X by demonstrating that…"}
+    ],
+    build:f=>[PREAMBLE,"",
+`TASK: Audit a single contribution claim.`,
+"",
+`THE CONTRIBUTION, as written in the thesis:`,`"""`,`${f.contribution||"[paste the exact wording of the contribution claim]"}`,`"""`,
+"",
+`Step 1. Trace the chain: claim → prior literature → evidence → reasoning → contribution. For each link, quote the passages that supply it, with locations. Where a link has no textual support, say so.`,
+"",
+`Step 2. Interrogate the claim under these six headings. Quote evidence under each.`,
+"",
+`SPECIFICITY — What exactly is new? Does the thesis identify a precise addition, correction, extension or challenge, or rely on vague formulations such as "adds to understanding"? Quote the operative wording.`,
+"",
+`CONTRAST — New relative to what? Can the prior position in the literature be stated clearly enough, from this thesis's own text, to show what has changed? Quote how the thesis states the prior position.`,
+"",
+`EVIDENCE — Which findings actually support the contribution? Could it survive if one major finding were removed? Name which one, and say what would remain.`,
+"",
+`PROPORTIONALITY — Is the language of contribution proportionate to the evidence? Does the thesis demonstrate, suggest, extend, qualify, challenge, or merely illustrate? Quote the verbs used and compare them with the strength of the findings chapter.`,
+"",
+`LOCATION — Is the contribution visible only in the final chapter, or has the thesis prepared the reader to recognise why it matters? Show where it is foreshadowed, or report that you cannot locate any foreshadowing.`,
+"",
+`DEFENCE — What is the strongest sceptical response? Could an examiner plausibly say the result is interesting but already implicit in existing literature? Make that case as strongly as the text allows, and then say how strong you actually consider it.`,
+"",
+`Step 3. State where the chain is strongest and where it remains most vulnerable, referring only to the evidence you quoted. Do not judge whether the contribution is sufficient for a doctorate.`
+    ].join("\n"),
+    ledger:{
+      k:"contribution", title:"Contribution audit",
+      hint:"One row per claimed contribution.",
+      cols:[
+        {k:"claim", h:"Contribution claimed", w:"20%"},
+        {k:"first", h:"First stated", w:"10%"},
+        {k:"prior", h:"Prior position it changes or extends", w:"20%"},
+        {k:"evidence", h:"Evidence presented", w:"20%"},
+        {k:"defended", h:"Where defended", w:"12%"},
+        {k:"vuln", h:"Remaining vulnerability", w:"18%"}
+      ]
+    }
+  }
+];
+
+const FINDING_TYPES = ["","Inconsistency","Omission","Ambiguity","Unsupported inference","Alternative interpretation"];
+const DISPOSITIONS = [
+  {k:"revise", t:"Revise", d:"You have satisfied yourself that this needs to change in the thesis."},
+  {k:"investigate", t:"Investigate further", d:"Real enough to pursue, but you cannot yet judge it. Note what you need."},
+  {k:"dismissed", t:"Dismissed", d:"You have read the passages and disagree. Record why — the reasoning is part of the audit."}
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+
+const blank = () => ({
+  version:2,
+  meta:{title:"",student:"",supervisor:"",discipline:"",stage:"",started:new Date().toISOString().slice(0,10)},
+  preflight:Object.fromEntries(PREFLIGHT.map(p=>[p.k,{state:"",note:""}])),
+  passes:Object.fromEntries(PASSES.map(p=>[p.id,{fields:{},notes:"",done:false}])),
+  ledgers:{commitments:[],foundation:[],drift:[],contribution:[]},
+  spotchecks:[],
+  readings:{baselineName:"",b1:"",b2:"",b3:"",baselineVerdict:"",r1:"",r2:"",r3:"",verdict:"",note:""},
+  runlog:[],
+  findings:[],
+  limits:{missed:"",nullAck:"",nullNote:""},
+  seq:1
+});
+
+let S = blank();
+let view = "setup";
+let dirty = false;
+let filter = "all";
+let open = {};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pass = id => PASSES.find(p=>p.id===id);
+
+function touch(){ dirty=true; paintSave(); }
+function paintSave(){
+  $("#saveState").classList.toggle("dirty",dirty);
+  $("#saveText").textContent = dirty ? "Unsaved changes" : "Saved";
+}
+function toast(m){
+  const t=$("#toast"); t.textContent=m; t.classList.add("show");
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2400);
+}
+
+const pfCleared = () => PREFLIGHT.every(p=>{
+  const v=S.preflight[p.k].state;
+  return v && v!=="Unresolved — I must not proceed yet";
+});
+const pfOutstanding = () => PREFLIGHT.filter(p=>{
+  const v=S.preflight[p.k].state;
+  return !v || v==="Unresolved — I must not proceed yet";
+}).length;
+
+function passTouched(p){
+  const st=S.passes[p.id];
+  if(st.done||st.notes.trim()) return true;
+  if(Object.values(st.fields||{}).some(v=>String(v||"").trim())) return true;
+  if(p.ledger && (S.ledgers[p.ledger.k]||[]).length) return true;
+  if(p.custom==="readings" && (S.readings.r1||S.readings.r2||S.readings.r3||S.readings.b1)) return true;
+  if(p.custom==="spotcheck" && S.spotchecks.length) return true;
+  if(S.runlog.some(r=>r.pass===p.id)) return true;
+  return S.findings.some(f=>f.pass===p.id);
+}
+const findingsFor = id => S.findings.filter(f=>f.pass===id);
+const gateComplete = f => !!(f.g1 && String(f.g2||"").trim() && String(f.g3||"").trim() && f.g4);
+
+/* ============================================================
+   NAV
+   ============================================================ */
+
+function renderNav(){
+  const out=pfOutstanding();
+  $("#navSetup").innerHTML =
+    `<button class="flat-item ${view==="setup"?"active":""}" data-go="setup">The thesis</button>
+     <button class="flat-item ${view==="preflight"?"active":""}" data-go="preflight">Before uploading anything
+       ${out?`<span class="pill warn">${out} open</span>`:`<span class="pill">Cleared</span>`}</button>
+     <button class="flat-item ${view==="how"?"active":""}" data-go="how">How this works</button>`;
+
+  $("#navPasses").innerHTML = PASSES.map(p=>{
+    const st=S.passes[p.id], t=passTouched(p), n=findingsFor(p.id).length;
+    return `<button class="seq-item ${view===p.id?"active":""} ${st.done?"done":(t?"touched":"")}" data-go="${p.id}">
+      <span class="node"></span><span class="num">${String(p.n).padStart(2,"0")}</span>${esc(p.key)}${n?`<span class="cnt">${n}</span>`:""}</button>`;
+  }).join("");
+
+  const openN = S.findings.filter(f=>!f.disposition).length;
+  const limDone = String(S.limits.missed||"").trim();
+  $("#navEnd").innerHTML =
+    `<button class="flat-item ${view==="findings"?"active":""}" data-go="findings">Findings register
+       ${S.findings.length?`<span class="pill ${openN?"warn":""}">${openN?openN+" open":S.findings.length}</span>`:""}</button>
+     <button class="flat-item ${view==="limits"?"active":""}" data-go="limits">What this missed
+       ${limDone?`<span class="pill">Stated</span>`:`<span class="pill hold">Required</span>`}</button>
+     <button class="flat-item ${view==="log"?"active":""}" data-go="log">Run log
+       ${S.runlog.length?`<span class="pill">${S.runlog.length}</span>`:""}</button>
+     <button class="flat-item ${view==="export"?"active":""}" data-go="export">Save &amp; share</button>`;
+}
+
+/* ============================================================
+   BUILDING BLOCKS
+   ============================================================ */
+
+function fieldHTML(p,f){
+  const v = S.passes[p.id].fields[f.k] || "";
+  const sub = f.sub ? `<div class="sub">${esc(f.sub)}</div>` : "";
+  let ctrl;
+  if(f.t==="textarea") ctrl=`<textarea data-pf2="${p.id}|${f.k}" placeholder="${esc(f.ph||"")}">${esc(v)}</textarea>`;
+  else if(f.t==="select") ctrl=`<select data-pf2="${p.id}|${f.k}">${f.opts.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select>`;
+  else ctrl=`<input type="text" data-pf2="${p.id}|${f.k}" value="${esc(v)}" placeholder="${esc(f.ph||"")}">`;
+  return `<div class="field"><span class="label">${esc(f.label)}</span>${sub}${ctrl}</div>`;
+}
+
+function ledgerHTML(cfg){
+  const rows = S.ledgers[cfg.k] || [];
+  const body = rows.length ? rows.map((r,i)=>`<tr>${
+    cfg.cols.map(c=>{
+      if(c.type==="select"){
+        const cls = ({"Discharged":"st-complete","Established":"st-complete","Legitimate development":"st-complete","Hand-enumerated":"st-complete",
+          "Partial":"st-partial","Undecided":"st-unclear","Different emphasis":"st-unclear","Model-found":"st-partial",
+          "Cannot locate":"st-missing","Altered without explanation":"st-missing","Wording exceeds evidence":"st-missing","Inconsistency":"st-missing"})[r[c.k]]||"";
+        return `<td><select class="${cls}" data-lg="${cfg.k}|${i}|${c.k}">${c.opts.map(o=>`<option ${o===(r[c.k]||"")?"selected":""}>${esc(o)}</option>`).join("")}</select></td>`;
+      }
+      return `<td><textarea data-lg="${cfg.k}|${i}|${c.k}" rows="2">${esc(r[c.k]||"")}</textarea></td>`;
+    }).join("")
+  }<td class="rm"><button class="iconbtn" data-lgrm="${cfg.k}|${i}" title="Remove row" aria-label="Remove row">✕</button></td></tr>`).join("")
+  : `<tr><td colspan="${cfg.cols.length+1}" style="padding:22px;text-align:center;color:var(--ink-3);font-size:13.5px">No rows yet.</td></tr>`;
+
+  return `<div class="sec">
+    <h3>${esc(cfg.title)}</h3><p class="hint">${esc(cfg.hint)}</p>
+    <div class="tbl-scroll"><table class="ledger">
+      <thead><tr>${cfg.cols.map(c=>`<th style="width:${c.w}">${esc(c.h)}</th>`).join("")}<th></th></tr></thead>
+      <tbody>${body}</tbody></table></div>
+    <div class="row-end"><button class="btn btn-sm" data-lgadd="${cfg.k}">Add row</button></div>
+  </div>`;
+}
+
+function promptHTML(p){
+  const cleared = pfCleared();
+  return `<div class="sec">
+    <h3>The prompt</h3>
+    <p class="hint">Copy this into your language model together with the relevant text.</p>
+    <div class="prompt-wrap">
+      <div class="prompt-bar"><span class="label">Prompt — pass ${p.n}</span>
+        <span class="copy-ok" id="copyOk"></span>
+        <button class="btn btn-ghost btn-sm" id="btnCopy" ${cleared?"":"disabled"}>Copy prompt</button></div>
+      <div class="prompt-body" id="promptBody">${esc(p.build(S.passes[p.id].fields))}</div>
+      ${cleared?"":`<div class="locked"><span>Copying is held until the four pre-upload questions are settled. Those constraints determine whether any of this is available to you.</span>
+        <button class="btn btn-sm" data-go="preflight">Settle them</button></div>`}
+    </div>
+  </div>`;
+}
+
+function runlogHTML(p){
+  const rows=S.runlog.filter(r=>r.pass===p.id);
+  return `<div class="sec">
+    <h3>Log this run</h3>
+    <p class="hint">Keep a record of what was run, on which chapters, with which model. If a declaration is required at submission it is far easier to write from a contemporaneous log than to reconstruct one.</p>
+    ${rows.length?`<div class="tbl-scroll"><table class="ledger" style="min-width:520px">
+      <thead><tr><th style="width:16%">Date</th><th style="width:30%">Model and version</th><th style="width:44%">Material supplied</th><th></th></tr></thead>
+      <tbody>${rows.map(r=>`<tr>
+        <td><input type="text" data-rl="${r.id}|date" value="${esc(r.date)}"></td>
+        <td><input type="text" data-rl="${r.id}|model" value="${esc(r.model)}" placeholder="e.g. Copilot (GPT-5), EDP on"></td>
+        <td><input type="text" data-rl="${r.id}|scope" value="${esc(r.scope)}" placeholder="e.g. Ch.4 full text, redacted quotes"></td>
+        <td class="rm"><button class="iconbtn" data-rlrm="${r.id}" aria-label="Remove entry">✕</button></td></tr>`).join("")}
+      </tbody></table></div>`:`<p style="color:var(--ink-3);font-size:13.5px;margin:0">No runs logged for this pass.</p>`}
+    <div class="row-end"><button class="btn btn-sm" data-rladd="${p.id}">Log a run</button></div>
+  </div>`;
+}
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+
+function viewSetup(){
+  const m=S.meta;
+  return `<div class="card">
+    <div class="pass-head"><span class="label">Before you start</span>
+      <h2 style="margin-top:6px">The thesis under audit</h2>
+      <p class="lede">These details appear on the summary you send to your supervisor. Nothing here leaves your computer.</p></div>
+    <div class="grid2">
+      <div class="field"><span class="label">Thesis title</span><input type="text" data-m="title" value="${esc(m.title)}" placeholder="Working title"></div>
+      <div class="field"><span class="label">Discipline or field</span><input type="text" data-m="discipline" value="${esc(m.discipline)}" placeholder="e.g. Organisational behaviour"></div>
+      <div class="field"><span class="label">Candidate</span><input type="text" data-m="student" value="${esc(m.student)}" placeholder="Name"></div>
+      <div class="field"><span class="label">Supervisor</span><input type="text" data-m="supervisor" value="${esc(m.supervisor)}" placeholder="Name"></div>
+    </div>
+    <div class="field"><span class="label">Stage</span>
+      <div class="sub">Shapes how you should read the results. An audit of a first full draft should generate more open questions than one run before submission.</div>
+      <select data-m="stage">${["","First full draft","Substantial revision","Pre-submission","Post-viva corrections"].map(o=>`<option ${o===m.stage?"selected":""}>${esc(o)}</option>`).join("")}</select></div>
+    <div class="note" style="margin-top:20px"><strong>What this tool is.</strong> It does not read your thesis and never sees it. It builds the prompts, holds the ledgers, keeps the run log, and records what you decided. You run the passes in whatever model your institution permits, and you make every judgement about what the results mean.</div>
+    <div class="row-end"><button class="btn btn-primary" data-go="preflight">Next: before uploading anything</button></div>
+  </div>`;
+}
+
+function viewPreflight(){
+  return `<div class="card">
+    <div class="pass-head"><span class="label">Before you start</span>
+      <h2 style="margin-top:6px">Before uploading anything</h2>
+      <p class="lede">This approach assumes you upload substantial portions of an unexamined thesis to an LLM. That raises four separate questions, and answering one of them does not answer the others.</p></div>
+
+    ${pfCleared()
+      ? `<div class="note" style="border-left-color:var(--clear);background:var(--clear-soft);color:#1F4A38"><strong>All four settled.</strong> The prompts are unlocked. Revisit this page if your material or your institution's position changes.</div>`
+      : `<div class="note stop"><strong>Prompt copying is held until these are settled.</strong> These constraints determine whether any of the method is available to you at all, so they come before the passes rather than after them.</div>`}
+
+    ${PREFLIGHT.map(p=>{
+      const v=S.preflight[p.k];
+      const cls = !v.state ? "none" : v.state.startsWith("Unresolved") ? "bad" : v.state==="Not applicable" ? "na" : "ok";
+      return `<div class="pf ${cls}" style="margin-top:16px">
+        <div class="pf-h"><span class="pfn">${p.n}</span><h4>${esc(p.q)}</h4></div>
+        <div class="pf-b">
+          <p>${esc(p.body)}</p>
+          <div class="grid2">
+            <div class="field" style="margin-bottom:0"><span class="label">Where this stands</span>
+              <select data-pfs="${p.k}">${PF_STATES.map(o=>`<option value="${esc(o)}" ${o===v.state?"selected":""}>${o||"Not yet considered"}</option>`).join("")}</select></div>
+            <div class="field" style="margin-bottom:0"><span class="label">${esc(p.ask)}</span>
+              <textarea data-pfn="${p.k}" style="min-height:64px" placeholder="${esc(p.ph)}">${esc(v.note)}</textarea></div>
+          </div>
+        </div></div>`;
+    }).join("")}
+
+    <div class="row-end"><button class="btn btn-primary" data-go="how">Next: how this works</button></div>
+  </div>`;
+}
+
+function viewHow(){
+  return `<div class="card">
+    <div class="pass-head"><span class="label">Orientation</span>
+      <h2 style="margin-top:6px">The most useful question is not “What do you think of my chapter?”</h2>
+      <p class="lede">A broad request may produce fluent and apparently insightful feedback, but the judgement is difficult to audit, and the model is easily drawn into the framing supplied by the user. Asking whether a chapter is coherent can encourage it to construct a coherent reading.</p></div>
+
+    <div class="rationale"><span class="label">The distinction this tool rests on</span>
+      <p>A reader gives an impression. An auditor produces evidence that can be checked.</p>
+      <p>A close reading of a multi-chapter thesis becomes harder the longer the author has lived inside the manuscript. The author reads every ambiguous passage in the light of knowing how the argument is supposed to work. An LLM does not possess that internal reconstruction either — used carefully, that is precisely its value.</p></div>
+
+    <div class="sec"><h3>The division of labour</h3>
+      <p class="hint">Each pass is built around this split, and the prompts are written to hold the model to the left-hand column.</p>
+      <div class="grid2">
+        <div><span class="label" style="color:var(--accent)">The model does</span>
+          <ul style="margin:8px 0 0;padding-left:18px;color:var(--ink-2);font-size:14px;line-height:1.75">
+            <li>extraction</li><li>comparison</li><li>bookkeeping</li><li>searching</li><li>pattern detection</li>
+            <li>constructing counterarguments</li><li>tracing dependencies</li><li>identifying possible omissions</li>
+            <li>repeating a procedure consistently across large amounts of text</li></ul></div>
+        <div><span class="label" style="color:var(--flag)">You do</span>
+          <ul style="margin:8px 0 0;padding-left:18px;color:var(--ink-2);font-size:14px;line-height:1.75">
+            <li>deciding whether an apparent inconsistency matters</li><li>judging the quality of evidence</li>
+            <li>determining whether conceptual development is legitimate</li><li>deciding which criticism is disciplinarily important</li>
+            <li>interpreting ambiguity</li><li>assessing theoretical significance</li>
+            <li>deciding what the thesis ultimately claims</li><li>revising the argument</li></ul></div>
+      </div>
+      <div class="rationale correction" style="margin-top:18px">
+        <span class="label">The qualification that cuts across the whole of the first column</span>
+        <p>Everything in the model's column produces candidates, not complete sets. It finds definitions but not necessarily every definition; it locates discharges but not necessarily every failure to discharge; it identifies drift where drift is textually obvious and misses it where it is subtle. What the model returns can be checked against the manuscript. What it fails to return leaves no trace.</p>
+        <p>This method is well suited to finding problems and poorly suited to ruling them out. A student who runs all seven passes and finds little has not established that the thesis is sound. They have established that these particular procedures, on this occasion, did not surface anything — which is a much weaker statement, and should be recorded as such.</p>
+      </div>
+    </div>
+
+    <div class="sec"><h3>What a usable output looks like</h3>
+      <p class="hint">The most useful outputs are not answers. They are candidate problems accompanied by evidence.</p>
+      <div class="grid2">
+        <div style="border:1px solid var(--rule);border-left:2px solid var(--flag);border-radius:0 3px 3px 0;padding:14px 16px;background:var(--surface-2)">
+          <span class="label" style="color:var(--flag)">Not this</span>
+          <p style="margin:6px 0 0;font-family:var(--display);font-size:15px;color:var(--ink-2)">Chapter 4 is theoretically inconsistent with Chapter 2.</p></div>
+        <div style="border:1px solid var(--rule);border-left:2px solid var(--clear);border-radius:0 3px 3px 0;padding:14px 16px;background:var(--surface-2)">
+          <span class="label" style="color:var(--clear)">This</span>
+          <p style="margin:6px 0 0;font-family:var(--display);font-size:15px;color:var(--ink-2)">Chapter 2 defines X using attributes A, B and C (Section 2.3, p. 41). In Chapter 4, X is operationalised using A and D (Section 4.2, p. 88), with no explicit explanation of the change from C to D. These passages appear to be the relevant evidence. Consider whether the operationalisation requires justification.</p></div>
+      </div>
+      <p class="hint" style="margin-top:12px">The second is more useful because you can inspect it, disagree with it and act on it. Note the locations: without them the criticism cannot be evaluated.</p>
+    </div>
+
+    <div class="sec"><h3>How to work through it</h3>
+      <ol style="margin:0;padding-left:20px;color:var(--ink-2);font-size:14px;line-height:1.8">
+        <li>Settle the four pre-upload questions. The prompts stay locked until you do.</li>
+        <li>Fill in the pass fields, copy the prompt, and log the run as you go.</li>
+        <li>Record what comes back — in the ledger where there is one, and as findings where something looks worth pursuing.</li>
+        <li>No finding becomes a revision decision until you have answered the four diagnostic questions yourself.</li>
+        <li>State what the method missed before you export. That statement is part of the result, not a disclaimer on it.</li>
+      </ol>
+      <div class="note" style="margin-top:16px"><strong>This is not a substitute for supervision, and not a proxy for examination.</strong> It is a way of making your thesis more inspectable to you before other people read it.</div>
+    </div>
+    <div class="row-end"><button class="btn btn-primary" data-go="p1">Start with Pass 1</button></div>
+  </div>`;
+}
+
+function spotcheckHTML(){
+  const rows=S.spotchecks;
+  const answered=rows.filter(r=>r.caught);
+  const missed=rows.filter(r=>r.caught==="Missed by the ledger").length;
+  return `<div class="sec">
+    <h3>Recall spot-check</h3>
+    <p class="hint">Take three or four promissory statements you already know exist, buried in the middle chapters, and check whether the ledger caught them. If it missed one, that is information about how much weight the rest of the ledger can bear.</p>
+    ${rows.length?`<div class="tbl-scroll"><table class="ledger" style="min-width:600px">
+      <thead><tr><th style="width:46%">Promissory statement you know exists</th><th style="width:20%">Where</th><th style="width:30%">Did the ledger catch it?</th><th></th></tr></thead>
+      <tbody>${rows.map((r,i)=>`<tr>
+        <td><textarea data-sc="${i}|text" rows="2" placeholder="Quote it">${esc(r.text||"")}</textarea></td>
+        <td><input type="text" data-sc="${i}|loc" value="${esc(r.loc||"")}" placeholder="Ch.5 §5.2"></td>
+        <td><select class="${r.caught==="Missed by the ledger"?"st-missing":(r.caught?"st-complete":"")}" data-sc="${i}|caught">${
+          ["","Caught","Missed by the ledger"].map(o=>`<option ${o===(r.caught||"")?"selected":""}>${o||"Not checked"}</option>`).join("")}</select></td>
+        <td class="rm"><button class="iconbtn" data-scrm="${i}" aria-label="Remove">✕</button></td></tr>`).join("")}
+      </tbody></table></div>`:`<p style="color:var(--ink-3);font-size:13.5px;margin:0">No spot-checks recorded.</p>`}
+    <div class="row-end"><button class="btn btn-sm" data-scadd="1">Add a spot-check</button></div>
+    ${answered.length>=3 ? (missed
+      ? `<div class="note stop" style="margin-top:14px"><strong>${missed} of ${answered.length} checked statements were missed.</strong> Recall on this run is demonstrably incomplete. Treat the ledger as a partial list of candidates, weight the hand-enumerated rows accordingly, and record this in your statement of what the method missed.</div>`
+      : `<div class="note warn" style="margin-top:14px"><strong>All ${answered.length} checked statements were caught.</strong> That is encouraging about this run and is not a clearance certificate. You tested a handful of statements you already knew about; the failures that matter are the ones you would not think to test for.</div>`) : ""}
+  </div>`;
+}
+
+function readingsHTML(){
+  const R=S.readings;
+  const box=(k,lbl)=>`<div class="reading"><div class="rh">${esc(lbl)}</div>
+    <textarea data-rd="${k}" placeholder="Paste the answer">${esc(R[k])}</textarea></div>`;
+  const vbox=(name,cur,opts,extra)=>`<div class="verdict">${opts.map(([t,d])=>`<label class="vopt ${cur===t?"sel":""}">
+    <input type="radio" name="${name}" value="${esc(t)}" ${cur===t?"checked":""}>
+    <span><span class="vt">${esc(t)}</span><span class="vd">${esc(d)}</span></span></label>`).join("")}</div>${extra||""}`;
+
+  const baseDone = R.baselineVerdict;
+  return `<div class="sec">
+    <h3>Step 1 — the baseline</h3>
+    <p class="hint">Run the identical procedure on a text you have independent reason to believe is clearly argued: a well-regarded published paper in your field, or a chapter your supervisor has already told you is unambiguous. Whatever divergence that produces is the method's noise floor.</p>
+    <div class="field"><span class="label">Baseline text</span>
+      <input type="text" data-rd="baselineName" value="${esc(R.baselineName)}" placeholder="e.g. Eisenhardt (1989), AMR — theory-building from case studies"></div>
+    <div class="readings">${box("b1","Baseline reading 1")}${box("b2","Baseline reading 2")}${box("b3","Baseline reading 3")}</div>
+    <div style="margin-top:14px"><span class="label" style="display:block;margin-bottom:6px">Divergence on the baseline — your noise floor</span>
+      ${vbox("bverdict",R.baselineVerdict,[
+        ["Stable","The three baseline readings substantially agree. Divergence on your own text will mean something."],
+        ["Variable but compatible","The baseline itself produced some variation. Expect at least this much on your own text."],
+        ["Materially divergent","The procedure diverges even on a text known to be clear. Tighten the question or the conditions before going further — as it stands the test cannot tell you anything about your manuscript."]
+      ])}</div>
+    ${R.baselineVerdict==="Materially divergent"?`<div class="note stop" style="margin-top:12px"><strong>The instrument is too noisy to read.</strong> Divergence on a clear text means the variation is coming from the procedure, not the manuscript. Specify the question more tightly, or hold the conditions more firmly constant, and re-run the baseline before testing your own chapters.</div>`:""}
+  </div>
+
+  <div class="sec" style="${baseDone?"":"opacity:.5;pointer-events:none"}">
+    <h3>Step 2 — your material</h3>
+    <p class="hint">${baseDone?"Same model, same version, same settings, same prompt wording, no prior context. If any of these changed between runs, the comparison is uninterpretable.":"Establish the baseline first. Without a noise floor there is nothing to measure against."}</p>
+    <div class="readings">${box("r1","Reading 1 — fresh context")}${box("r2","Reading 2 — fresh context")}${box("r3","Reading 3 — fresh context")}</div>
+    <div style="margin-top:14px"><span class="label" style="display:block;margin-bottom:6px">Your classification</span>
+      ${vbox("verdict",R.verdict,[
+        ["Stable","Independent readings substantially agree."],
+        ["Variable but compatible","Different readings emphasise different aspects without contradicting one another."],
+        ["Materially divergent","Different readings imply significantly different understandings — and the divergence exceeds what the same procedure produced on the baseline."]
+      ])}</div>
+    <div class="field" style="margin-top:14px"><span class="label">If divergent, what in the text permitted it?</span>
+      <textarea data-rd="note" placeholder="Not which answer was right — why the chapter could support more than one reading, and why you are confident this exceeds the noise floor.">${esc(S.readings.note)}</textarea></div>
+    ${S.readings.verdict==="Materially divergent"?`<div class="note warn" style="margin-top:4px"><strong>Only this category warrants revision.</strong> Check the divergence against your baseline before acting: if the baseline produced comparable variation, this is instrumentation noise rather than evidence about your writing. Some theoretical arguments are appropriately nuanced or deliberately open — the point is that you should know where the ambiguity is.</div>`:""}
+  </div>`;
+}
+
+function viewPass(p){
+  const st=S.passes[p.id], mine=findingsFor(p.id);
+  return `<div class="card">
+    <div class="pass-head">
+      <div class="pass-eyebrow"><span class="n">${String(p.n).padStart(2,"0")}</span><span class="of">Pass ${p.n} of 7</span></div>
+      <h2>${esc(p.key)}</h2>
+      <p class="lede">${esc(p.lede)}</p>
+      <div class="rationale"><span class="label">Why this pass</span>${p.rationale.map(r=>`<p>${esc(r)}</p>`).join("")}</div>
+      ${p.correction?`<div class="rationale correction" style="margin-top:12px"><span class="label">Where this is most likely to mislead</span>${p.correction.map(r=>`<p>${esc(r)}</p>`).join("")}</div>`:""}
+    </div>
+
+    <div class="sec"><h3>Set the pass</h3><p class="hint">The prompt below rebuilds as you type.</p>
+      ${p.fields.map(f=>fieldHTML(p,f)).join("")}</div>
+
+    ${promptHTML(p)}
+    ${p.ledger?ledgerHTML(p.ledger):""}
+    ${p.custom==="spotcheck"?spotcheckHTML():""}
+    ${p.custom==="readings"?readingsHTML():""}
+    ${runlogHTML(p)}
+
+    <div class="sec"><h3>Working notes</h3>
+      <p class="hint">For your own thinking. Not included in the supervisor summary.</p>
+      <textarea id="passNotes" data-p="${p.id}" placeholder="What you noticed, what to come back to.">${esc(st.notes)}</textarea></div>
+
+    <div class="sec"><h3>Findings from this pass <span class="label" style="margin-left:6px">${mine.length}</span></h3>
+      <p class="hint">Record anything worth pursuing. It goes to the findings register, where you decide what to do about it.</p>
+      ${mine.length?mine.map(f=>findingHTML(f)).join(""):`<p style="color:var(--ink-3);font-size:13.5px;margin:0">Nothing recorded from this pass yet.</p>`}
+      <div class="row-end">
+        <button class="btn" data-newfinding="${p.id}">Record a finding</button><span class="spacer"></span>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2);cursor:pointer">
+          <input type="checkbox" id="passDone" ${st.done?"checked":""}> Mark this pass complete</label>
+      </div>
+    </div>
+  </div>`;
+}
+
+function findingHTML(f){
+  const p=pass(f.pass), isOpen=!!open[f.id], disp=f.disposition;
+  const stamp = disp?`<span class="stamp ${disp}">${DISPOSITIONS.find(d=>d.k===disp).t}</span>`:`<span class="stamp open">Not adjudicated</span>`;
+  const ready=gateComplete(f);
+  const head=`<div class="finding-head" data-toggle="${f.id}">
+    <span class="chev">${isOpen?"▾":"▸"}</span>
+    <span class="ttl">${esc(f.title||"Untitled finding")}<span class="meta">${p?`Pass ${p.n} · ${esc(p.key)}`:"Unassigned"}${f.location?` · ${esc(f.location)}`:""}</span></span>
+    ${stamp}</div>`;
+  if(!isOpen) return `<div class="finding ${disp?"resolved d-"+disp:""}">${head}</div>`;
+
+  return `<div class="finding ${disp?"resolved d-"+disp:""}">${head}<div class="finding-body">
+    <div class="field" style="margin-top:16px"><span class="label">What was flagged</span>
+      <input type="text" data-fd="${f.id}|title" value="${esc(f.title)}" placeholder="One line, in your own words"></div>
+    <div class="grid2">
+      <div class="field"><span class="label">Where in the thesis</span>
+        <input type="text" data-fd="${f.id}|location" value="${esc(f.location)}" placeholder="e.g. Ch. 2 §2.4 p.41 and Ch. 4 §4.2 p.88"></div>
+      <div class="field"><span class="label">Which pass raised it</span>
+        <select data-fd="${f.id}|pass"><option value="">Unassigned</option>${PASSES.map(x=>`<option value="${x.id}" ${x.id===f.pass?"selected":""}>Pass ${x.n} — ${esc(x.key)}</option>`).join("")}</select></div>
+    </div>
+    <div class="field"><span class="label">The evidence the model produced</span>
+      <div class="sub">Paste the quoted passages with their locations, not the model's assessment of them.</div>
+      <textarea data-fd="${f.id}|evidence" placeholder="Quoted passages with locations.">${esc(f.evidence)}</textarea></div>
+
+    <div class="gate">
+      <div class="gate-head"><h4>Before this becomes a decision</h4><span class="label">Four questions</span></div>
+      <p class="hint">Answer these yourself, from the thesis. Until all four are answered the model has identified something to investigate — not something that must change.</p>
+
+      <div class="gate-q"><div class="q"><span class="qn">01</span><span>What exactly has the model identified?</span></div>
+        <select data-fd="${f.id}|g1">${FINDING_TYPES.map(o=>`<option value="${esc(o)}" ${o===f.g1?"selected":""}>${o?esc(o):"Choose one"}</option>`).join("")}</select></div>
+
+      <div class="gate-q"><div class="q"><span class="qn">02</span><span>Where is the evidence?</span></div>
+        <div class="sub" style="margin-left:20px">Locate the passages in your own manuscript. Give the references you found, not the ones the model asserted. If you cannot locate them, the criticism cannot be evaluated.</div>
+        <textarea data-fd="${f.id}|g2" rows="2" placeholder="The passages I located, and their references.">${esc(f.g2)}</textarea></div>
+
+      <div class="gate-q"><div class="q"><span class="qn">03</span><span>Could you explain why the issue matters?</span></div>
+        <div class="sub" style="margin-left:20px">If you cannot, the criticism may merely sound sophisticated.</div>
+        <textarea data-fd="${f.id}|g3" rows="2" placeholder="Why this affects the argument, in disciplinary terms.">${esc(f.g3)}</textarea></div>
+
+      <div class="gate-q"><div class="q"><span class="qn">04</span><span>Would you make the same judgement after reading the passages yourself?</span></div>
+        <select data-fd="${f.id}|g4">${["","Yes","Partly","No"].map(o=>`<option value="${esc(o)}" ${o===f.g4?"selected":""}>${o||"Choose one"}</option>`).join("")}</select></div>
+
+      <div class="gate-status"><span class="msg ${ready?"ready":""}">${ready?"All four answered. You can now decide what happens to this finding.":"Answer all four questions to unlock the decision."}</span></div>
+
+      <div class="verdict" style="margin-top:14px">
+        ${DISPOSITIONS.map(d=>`<label class="vopt ${f.disposition===d.k?"sel":""}" style="${ready?"":"opacity:.45;cursor:not-allowed"}">
+          <input type="radio" name="disp-${f.id}" value="${d.k}" ${f.disposition===d.k?"checked":""} ${ready?"":"disabled"} data-disp="${f.id}">
+          <span><span class="vt">${d.t}</span><span class="vd">${esc(d.d)}</span></span></label>`).join("")}</div>
+
+      ${f.disposition?`<div class="field" style="margin-top:14px"><span class="label">${f.disposition==="dismissed"?"Why you are dismissing it":"What you will do"}</span>
+        <textarea data-fd="${f.id}|action" rows="2" placeholder="${f.disposition==="dismissed"?"Your reasoning. This is part of the audit record.":"The change, or what you need in order to decide."}">${esc(f.action)}</textarea></div>`:""}
+    </div>
+    <div class="row-end"><span class="spacer"></span><button class="btn btn-sm btn-danger" data-frm="${f.id}">Delete finding</button></div>
+  </div></div>`;
+}
+
+function viewFindings(){
+  const all=S.findings;
+  const c={open:all.filter(f=>!f.disposition).length,revise:all.filter(f=>f.disposition==="revise").length,
+    investigate:all.filter(f=>f.disposition==="investigate").length,dismissed:all.filter(f=>f.disposition==="dismissed").length};
+  const shown = filter==="all"?all : filter==="open"?all.filter(f=>!f.disposition) : all.filter(f=>f.disposition===filter);
+  const chips=[["all","All ("+all.length+")"],["open","Not adjudicated ("+c.open+")"],["revise","Revise ("+c.revise+")"],
+    ["investigate","Investigate ("+c.investigate+")"],["dismissed","Dismissed ("+c.dismissed+")"]];
+
+  return `<div class="card">
+    <div class="pass-head"><span class="label">Across the audit</span>
+      <h2 style="margin-top:6px">Findings register</h2>
+      <p class="lede">Everything the seven passes turned up, and what you decided about it. Dismissals matter as much as revisions — together they are the record of judgement exercised.</p></div>
+    <div class="stat-strip">
+      <div class="stat holdv"><div class="v">${c.open}</div><div class="k label">Not adjudicated</div></div>
+      <div class="stat flagv"><div class="v">${c.revise}</div><div class="k label">To revise</div></div>
+      <div class="stat holdv"><div class="v">${c.investigate}</div><div class="k label">To investigate</div></div>
+      <div class="stat clearv"><div class="v">${c.dismissed}</div><div class="k label">Dismissed</div></div></div>
+    <div class="filters">${chips.map(([k,t])=>`<button class="chip ${filter===k?"on":""}" data-filter="${k}">${esc(t)}</button>`).join("")}</div>
+    ${shown.length?shown.map(f=>findingHTML(f)).join(""):`<div class="empty">
+      <h3>${all.length?"Nothing under this filter":"No findings recorded yet"}</h3>
+      <p>${all.length?"Change the filter to see the rest.":"Findings are recorded from within each pass, as the model returns evidence worth pursuing."}</p>
+      ${all.length?"":`<button class="btn btn-primary" data-go="p1">Go to Pass 1</button>`}</div>`}
+    ${all.length?`<div class="row-end"><button class="btn" data-newfinding="">Record a finding</button></div>`:""}
+  </div>`;
+}
+
+function viewLimits(){
+  const L=S.limits;
+  const total=S.findings.length, acted=S.findings.filter(f=>f.disposition==="revise").length;
+  const thin = total<=3;
+  return `<div class="card">
+    <div class="pass-head"><span class="label">Across the audit</span>
+      <h2 style="margin-top:6px">What this method missed</h2>
+      <p class="lede">One question to ask of the whole exercise, before you report anything from it.</p>
+      <div class="rationale correction"><span class="label">Why this page is required, not optional</span>
+        <p>The passes search for particular kinds of failure — undischarged promises, definitional drift, unwarranted inference, overstated contribution. A thesis can be weak in ways none of them are looking for: a poorly chosen research question, a literature the author has not read, a method that was competently executed and inappropriate from the outset. None of those will appear in a ledger.</p>
+        <p>What the machine does not report is not thereby absent. The governing principle includes the judgement about what it failed to find.</p></div></div>
+
+    <div class="sec"><h3>What would this method have missed?</h3>
+      <p class="hint">Write this in your own terms, about this thesis. What kinds of weakness would these seven passes be structurally incapable of surfacing here?</p>
+      <textarea data-lim="missed" style="min-height:130px" placeholder="e.g. None of the passes can tell me whether the research question was worth asking, or whether the sampling frame was appropriate. Neither can they detect a literature I have simply not encountered — the audit only sees what is in the manuscript.">${esc(L.missed)}</textarea></div>
+
+    <div class="sec"><h3>What the audit did and did not establish</h3>
+      <p class="hint">A student who runs all seven passes and finds little has not established that the thesis is sound.</p>
+      ${thin?`<div class="note warn" style="margin-bottom:14px"><strong>This audit produced ${total} finding${total===1?"":"s"}.</strong> That is a thin result, and thin results are exactly where the temptation to read reassurance is strongest. Consider whether the passes were run on enough of the manuscript, and whether your Pass 2 recall spot-check supports the coverage you are implying.</div>`:""}
+      <div class="field"><span class="label">Your statement</span>
+        <select data-lim="nullAck">${["",
+          "These procedures, on this occasion, did not surface anything further — which is a weaker statement than soundness",
+          "The audit surfaced substantive problems, which are recorded in the register",
+          "Coverage was partial; the audit does not speak to the chapters not run"].map(o=>`<option value="${esc(o)}" ${o===L.nullAck?"selected":""}>${o||"Choose the statement that is actually true"}</option>`).join("")}</select></div>
+      <div class="field"><span class="label">Coverage — what was and was not audited</span>
+        <div class="sub">Which chapters were run through which passes, and which were not.</div>
+        <textarea data-lim="nullNote" placeholder="e.g. Passes 1 and 5 run on Chapters 2, 4 and 7. Chapters 5–6 not audited — participant data, excluded under the ethics check. Pass 2 recall spot-check missed 1 of 4.">${esc(L.nullNote)}</textarea></div>
+      <p class="hint" style="margin-top:2px">${acted?`${acted} finding${acted===1?" was":"s were"} marked for revision.`:"No findings have been marked for revision."} This statement appears at the head of the supervisor summary.</p>
+    </div>
+    <div class="row-end"><button class="btn btn-primary" data-go="export">Next: save &amp; share</button></div>
+  </div>`;
+}
+
+function viewLog(){
+  const rows=S.runlog;
+  return `<div class="card">
+    <div class="pass-head"><span class="label">Across the audit</span>
+      <h2 style="margin-top:6px">Run log</h2>
+      <p class="lede">What was run, on which chapters, with which model. Whether a use is permitted and whether it must be declared are separate matters — and a declaration is far easier to write from a contemporaneous log than to reconstruct at submission.</p></div>
+    ${rows.length?`<div class="tbl-scroll"><table class="ledger" style="min-width:640px">
+      <thead><tr><th style="width:14%">Date</th><th style="width:20%">Pass</th><th style="width:26%">Model and version</th><th style="width:40%">Material supplied</th><th></th></tr></thead>
+      <tbody>${rows.map(r=>{const p=pass(r.pass);return `<tr>
+        <td><input type="text" data-rl="${r.id}|date" value="${esc(r.date)}"></td>
+        <td style="padding-top:12px;font-size:12.5px;color:var(--ink-2)">${p?`Pass ${p.n} — ${esc(p.key)}`:"—"}</td>
+        <td><input type="text" data-rl="${r.id}|model" value="${esc(r.model)}" placeholder="e.g. Copilot (GPT-5), EDP on"></td>
+        <td><input type="text" data-rl="${r.id}|scope" value="${esc(r.scope)}" placeholder="e.g. Ch.4 full text, quotes redacted"></td>
+        <td class="rm"><button class="iconbtn" data-rlrm="${r.id}" aria-label="Remove">✕</button></td></tr>`}).join("")}
+      </tbody></table></div>`:`<div class="empty"><h3>Nothing logged yet</h3><p>Entries are added from within each pass as you run it. Logging contemporaneously is much easier than reconstructing later.</p><button class="btn btn-primary" data-go="p1">Go to Pass 1</button></div>`}
+    ${rows.length?`<div class="note" style="margin-top:16px"><strong>Declaration.</strong> ${esc(S.preflight.declare.note||"You have not recorded what your institution requires you to declare. Return to the pre-upload questions.")}</div>`:""}
+  </div>`;
+}
+
+function viewExport(){
+  const done=PASSES.filter(p=>S.passes[p.id].done).length;
+  const openN=S.findings.filter(f=>!f.disposition).length;
+  const limMissing=!String(S.limits.missed||"").trim();
+  return `<div class="card">
+    <div class="pass-head"><span class="label">Across the audit</span>
+      <h2 style="margin-top:6px">Save &amp; share</h2>
+      <p class="lede">Your work lives in a file you keep. Nothing is stored on a server, and closing the tab without saving will lose it.</p></div>
+    <div class="stat-strip">
+      <div class="stat"><div class="v">${done}/7</div><div class="k label">Passes complete</div></div>
+      <div class="stat"><div class="v">${S.findings.length}</div><div class="k label">Findings</div></div>
+      <div class="stat ${openN?"holdv":"clearv"}"><div class="v">${openN}</div><div class="k label">Not adjudicated</div></div>
+      <div class="stat"><div class="v">${S.runlog.length}</div><div class="k label">Runs logged</div></div></div>
+
+    <div class="sec"><h3>Your audit file</h3>
+      <p class="hint">A single JSON file holding everything — pre-flight, fields, ledgers, findings, run log, notes. Save as you go and reopen to continue.</p>
+      <div class="row-end" style="margin-top:0"><button class="btn btn-primary" id="x-save">Save audit file</button>
+        <button class="btn" id="x-load">Open an audit file</button></div></div>
+
+    <div class="sec"><h3>Supervisor summary</h3>
+      <p class="hint">A self-contained page showing what you found, what you decided, why, and what the method could not see. It carries your reasoning and your ledger entries — not the raw model output and not your working notes.</p>
+      ${limMissing?`<div class="note stop" style="margin-bottom:14px"><strong>State what the method missed first.</strong> Without it the summary reads as a coverage claim the audit cannot support. <button class="btn btn-sm" data-go="limits" style="margin-left:8px">Write it</button></div>`:""}
+      ${openN?`<div class="note warn" style="margin-bottom:14px"><strong>${openN} finding${openN>1?"s have":" has"} not been adjudicated.</strong> They will appear marked as such, which is fine if you want to discuss them in supervision.</div>`:""}
+      <div class="row-end" style="margin-top:0"><button class="btn btn-primary" id="x-sup" ${limMissing?"disabled":""}>Download supervisor summary</button></div></div>
+
+    <div class="sec"><h3>Start again</h3>
+      <p class="hint">Clears everything in this tab. Save first if you want to keep it.</p>
+      <div class="row-end" style="margin-top:0"><button class="btn btn-danger" id="x-reset">Clear this audit</button></div></div>
+  </div>`;
+}
+
+/* ============================================================
+   RENDER + BIND
+   ============================================================ */
+
+function render(){
+  const chip=$("#thesisChip");
+  chip.textContent=S.meta.title||"";
+  chip.style.display=S.meta.title?"":"none";
+  renderNav();
+  const st=$("#stage");
+  st.innerHTML =
+    view==="setup"?viewSetup():
+    view==="preflight"?viewPreflight():
+    view==="how"?viewHow():
+    view==="findings"?viewFindings():
+    view==="limits"?viewLimits():
+    view==="log"?viewLog():
+    view==="export"?viewExport():
+    viewPass(pass(view));
+  bindAll();
+}
+
+function refreshGate(f){
+  const head=document.querySelector(`[data-toggle="${f.id}"]`);
+  if(!head) return;
+  const card=head.parentElement, ready=gateComplete(f);
+  const msg=card.querySelector(".gate-status .msg");
+  if(msg){ msg.classList.toggle("ready",ready);
+    msg.textContent=ready?"All four answered. You can now decide what happens to this finding.":"Answer all four questions to unlock the decision."; }
+  card.querySelectorAll(`[data-disp="${f.id}"]`).forEach(r=>{
+    r.disabled=!ready;
+    const box=r.closest(".vopt"); if(box) box.style.cssText = ready?"":"opacity:.45;cursor:not-allowed";
+  });
+}
+
+function bindAll(){
+  document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{
+    view=b.dataset.go; render(); window.scrollTo({top:0,behavior:"instant"}); });
+
+  document.querySelectorAll("[data-m]").forEach(el=>{
+    const h=()=>{ S.meta[el.dataset.m]=el.value; touch();
+      if(el.dataset.m==="title"){const c=$("#thesisChip");c.textContent=el.value;c.style.display=el.value?"":"none";} };
+    el.oninput=h; if(el.tagName==="SELECT") el.onchange=h; });
+
+  document.querySelectorAll("[data-pfs]").forEach(el=>{
+    el.onchange=()=>{ S.preflight[el.dataset.pfs].state=el.value; touch(); render(); }; });
+  document.querySelectorAll("[data-pfn]").forEach(el=>{
+    el.oninput=()=>{ S.preflight[el.dataset.pfn].note=el.value; touch(); }; });
+
+  document.querySelectorAll("[data-pf2]").forEach(el=>{
+    const h=()=>{ const [pid,k]=el.dataset.pf2.split("|");
+      S.passes[pid].fields[k]=el.value; touch();
+      const pv=$("#promptBody"); if(pv) pv.textContent=pass(pid).build(S.passes[pid].fields); };
+    el.oninput=h; if(el.tagName==="SELECT") el.onchange=h; });
+
+  const nt=$("#passNotes"); if(nt) nt.oninput=()=>{ S.passes[nt.dataset.p].notes=nt.value; touch(); };
+
+  document.querySelectorAll("[data-lg]").forEach(el=>{
+    const [k,i,c]=el.dataset.lg.split("|");
+    const h=()=>{ S.ledgers[k][+i][c]=el.value; touch(); if(el.tagName==="SELECT") render(); };
+    el.oninput=h; if(el.tagName==="SELECT") el.onchange=h; });
+  document.querySelectorAll("[data-lgadd]").forEach(b=>b.onclick=()=>{ S.ledgers[b.dataset.lgadd].push({}); touch(); render(); });
+  document.querySelectorAll("[data-lgrm]").forEach(b=>b.onclick=()=>{
+    const [k,i]=b.dataset.lgrm.split("|"); S.ledgers[k].splice(+i,1); touch(); render(); });
+
+  document.querySelectorAll("[data-sc]").forEach(el=>{
+    const [i,k]=el.dataset.sc.split("|");
+    const h=()=>{ S.spotchecks[+i][k]=el.value; touch(); if(el.tagName==="SELECT") render(); };
+    el.oninput=h; if(el.tagName==="SELECT") el.onchange=h; });
+  document.querySelectorAll("[data-scadd]").forEach(b=>b.onclick=()=>{ S.spotchecks.push({text:"",loc:"",caught:""}); touch(); render(); });
+  document.querySelectorAll("[data-scrm]").forEach(b=>b.onclick=()=>{ S.spotchecks.splice(+b.dataset.scrm,1); touch(); render(); });
+
+  document.querySelectorAll("[data-rd]").forEach(el=>{ el.oninput=()=>{ S.readings[el.dataset.rd]=el.value; touch(); }; });
+  document.querySelectorAll('input[name="verdict"]').forEach(el=>{ el.onchange=()=>{ S.readings.verdict=el.value; touch(); render(); }; });
+  document.querySelectorAll('input[name="bverdict"]').forEach(el=>{ el.onchange=()=>{ S.readings.baselineVerdict=el.value; touch(); render(); }; });
+
+  document.querySelectorAll("[data-lim]").forEach(el=>{
+    const h=()=>{ S.limits[el.dataset.lim]=el.value; touch(); if(el.tagName==="SELECT") render(); };
+    el.oninput=h; if(el.tagName==="SELECT") el.onchange=h;
+    if(el.dataset.lim==="missed") el.onblur=()=>renderNav(); });
+
+  document.querySelectorAll("[data-rl]").forEach(el=>{
+    const [id,k]=el.dataset.rl.split("|");
+    el.oninput=()=>{ const r=S.runlog.find(x=>x.id===id); if(r){ r[k]=el.value; touch(); } }; });
+  document.querySelectorAll("[data-rladd]").forEach(b=>b.onclick=()=>{
+    S.runlog.push({id:"r"+(S.seq++),pass:b.dataset.rladd,date:new Date().toISOString().slice(0,10),
+      model:S.passes.p6.fields.conditions||"",scope:""});
+    touch(); render(); });
+  document.querySelectorAll("[data-rlrm]").forEach(b=>b.onclick=()=>{
+    S.runlog=S.runlog.filter(r=>r.id!==b.dataset.rlrm); touch(); render(); });
+
+  const c=$("#btnCopy");
+  if(c) c.onclick=async()=>{
+    if(!pfCleared()) return;
+    const txt=$("#promptBody").textContent;
+    try{ await navigator.clipboard.writeText(txt); }
+    catch(e){ const ta=document.createElement("textarea"); ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0";
+      document.body.appendChild(ta); ta.select(); try{document.execCommand("copy");}catch(_){} document.body.removeChild(ta); }
+    $("#copyOk").textContent="Copied";
+    setTimeout(()=>{const k=$("#copyOk"); if(k) k.textContent="";},1800); };
+
+  const pd=$("#passDone"); if(pd) pd.onchange=()=>{ S.passes[view].done=pd.checked; touch(); render(); };
+
+  document.querySelectorAll("[data-newfinding]").forEach(b=>b.onclick=()=>{
+    const pid=b.dataset.newfinding||view;
+    const f={id:"f"+(S.seq++),pass:PASSES.some(p=>p.id===pid)?pid:"",title:"",location:"",evidence:"",
+      g1:"",g2:"",g3:"",g4:"",disposition:"",action:""};
+    S.findings.push(f); open[f.id]=true; touch(); render();
+    setTimeout(()=>{const el=document.querySelector(`[data-fd="${f.id}|title"]`); if(el) el.focus();},30); });
+
+  document.querySelectorAll("[data-toggle]").forEach(b=>b.onclick=()=>{ open[b.dataset.toggle]=!open[b.dataset.toggle]; render(); });
+
+  document.querySelectorAll("[data-fd]").forEach(el=>{
+    const [id,k]=el.dataset.fd.split("|");
+    const f=S.findings.find(x=>x.id===id); if(!f) return;
+    const apply=()=>{
+      f[k]=el.value; touch();
+      if(k==="title"){ const t=el.closest(".finding").querySelector(".finding-head .ttl");
+        if(t&&t.firstChild) t.firstChild.nodeValue=el.value||"Untitled finding"; return; }
+      if(k==="pass"){ render(); return; }
+      if(["g1","g2","g3","g4"].includes(k)){
+        if(f.disposition && !gateComplete(f)){ f.disposition=""; render(); return; }
+        refreshGate(f); } };
+    el.oninput=apply; if(el.tagName==="SELECT") el.onchange=apply; });
+
+  document.querySelectorAll("[data-disp]").forEach(el=>{
+    el.onchange=()=>{ const f=S.findings.find(x=>x.id===el.dataset.disp);
+      if(f&&gateComplete(f)){ f.disposition=el.value; touch(); render(); } }; });
+
+  document.querySelectorAll("[data-frm]").forEach(b=>b.onclick=()=>{
+    if(!confirm("Delete this finding? The record of your reasoning goes with it.")) return;
+    S.findings=S.findings.filter(f=>f.id!==b.dataset.frm); touch(); render(); });
+
+  document.querySelectorAll("[data-filter]").forEach(b=>b.onclick=()=>{ filter=b.dataset.filter; render(); });
+
+  const bind=(id,fn)=>{const e=$(id); if(e) e.onclick=fn;};
+  bind("#x-save",saveFile); bind("#x-load",()=>$("#fileIn").click()); bind("#x-sup",supervisorSummary);
+  bind("#x-reset",()=>{ if(confirm("Clear this audit? Everything not saved to a file will be lost.")){
+    S=blank(); open={}; view="setup"; dirty=false; render(); paintSave(); toast("Cleared"); } });
+}
+
+/* ============================================================
+   SAVE / LOAD / EXPORT
+   ============================================================ */
+
+function slug(){
+  const t=(S.meta.title||S.meta.student||"thesis-audit").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50);
+  return (t||"thesis-audit")+"-"+new Date().toISOString().slice(0,10);
+}
+function download(name,text,type){
+  const b=new Blob([text],{type}), u=URL.createObjectURL(b);
+  const a=document.createElement("a"); a.href=u; a.download=name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(u),1500);
+}
+function saveFile(){
+  download(slug()+".json",JSON.stringify(S,null,2),"application/json");
+  dirty=false; paintSave(); toast("Audit file saved to your downloads");
+}
+$("#fileIn").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(!d||!d.passes||!d.findings) throw new Error("shape");
+      const base=blank();
+      S={...base,...d,
+        meta:{...base.meta,...(d.meta||{})},
+        preflight:Object.fromEntries(PREFLIGHT.map(p=>[p.k,{...base.preflight[p.k],...((d.preflight||{})[p.k]||{})}])),
+        ledgers:{...base.ledgers,...(d.ledgers||{})},
+        readings:{...base.readings,...(d.readings||{})},
+        limits:{...base.limits,...(d.limits||{})},
+        spotchecks:Array.isArray(d.spotchecks)?d.spotchecks:[],
+        runlog:Array.isArray(d.runlog)?d.runlog:[],
+        passes:Object.fromEntries(PASSES.map(p=>[p.id,{...base.passes[p.id],...((d.passes||{})[p.id]||{})}]))};
+      const ids=[...S.findings.map(x=>x.id),...S.runlog.map(x=>x.id)]
+        .map(x=>parseInt(String(x).replace(/\D/g,""),10)||0);
+      S.seq=Math.max(1,...ids,0)+1;
+      open={}; view="setup"; dirty=false; render(); paintSave(); toast("Audit file opened");
+    }catch(err){ alert("That file could not be read as an audit file. Choose a JSON file saved by this tool."); }
+    e.target.value="";
+  };
+  r.readAsText(f);
+});
+
+function supervisorSummary(){
+  const m=S.meta, L=S.limits;
+  const byDisp=k=>S.findings.filter(f=>f.disposition===k);
+  const openF=S.findings.filter(f=>!f.disposition);
+  const pName=id=>{const p=pass(id); return p?`Pass ${p.n} — ${p.key}`:"Unassigned";};
+
+  const fBlock=f=>`<div class="f ${f.disposition||"open"}">
+    <div class="ft">${esc(f.title||"Untitled finding")}</div>
+    <div class="fm">${esc(pName(f.pass))}${f.location?` &nbsp;·&nbsp; ${esc(f.location)}`:""}${f.g1?` &nbsp;·&nbsp; ${esc(f.g1)}`:""}</div>
+    ${f.g2?`<p><span class="k">Evidence located in the thesis</span>${esc(f.g2)}</p>`:""}
+    ${f.g3?`<p><span class="k">Why it matters</span>${esc(f.g3)}</p>`:""}
+    ${f.g4?`<p><span class="k">Same judgement on reading the passages myself</span>${esc(f.g4)}</p>`:""}
+    ${f.action?`<p><span class="k">${f.disposition==="dismissed"?"Reason for dismissal":"Action"}</span>${esc(f.action)}</p>`:""}</div>`;
+
+  const ledgerBlock=cfg=>{
+    const rows=(S.ledgers[cfg.k]||[]).filter(r=>Object.values(r).some(v=>String(v||"").trim()));
+    if(!rows.length) return "";
+    return `<h3>${esc(cfg.title)}</h3><table><thead><tr>${cfg.cols.map(c=>`<th>${esc(c.h)}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map(r=>`<tr>${cfg.cols.map(c=>`<td>${esc(r[c.k]||"—")}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  };
+
+  const passRows=PASSES.map(p=>{
+    const st=S.passes[p.id], n=findingsFor(p.id).length;
+    return `<tr><td>${p.n}</td><td>${esc(p.key)}</td><td>${st.done?"Complete":(passTouched(p)?"In progress":"Not started")}</td><td>${n||"—"}</td></tr>`;
+  }).join("");
+
+  const scRows=S.spotchecks.filter(r=>r.caught);
+  const scMissed=scRows.filter(r=>r.caught==="Missed by the ledger").length;
+  const scBlock=scRows.length?`<h3>Pass 2 recall spot-check</h3>
+    <p class="body">${scMissed
+      ? `Of ${scRows.length} promissory statements known to exist and checked against the ledger, ${scMissed} ${scMissed===1?"was":"were"} not caught. Recall on this run is demonstrably incomplete and the ledger should be read as a partial list of candidates.`
+      : `All ${scRows.length} checked statements were caught. This is encouraging about the run and is not a clearance certificate — the failures that matter are the ones that would not be thought of as tests.`}</p>`:"";
+
+  const R=S.readings;
+  const readingBlock = R.verdict?`<h3>Independent-reading test</h3>
+    <p><span class="k">Question tested</span>${esc(S.passes.p6.fields.question||"—")}</p>
+    <p><span class="k">Baseline text</span>${esc(R.baselineName||"Not recorded")}</p>
+    <p><span class="k">Divergence on the baseline (noise floor)</span>${esc(R.baselineVerdict||"Not established")}</p>
+    <p><span class="k">Divergence on this manuscript</span>${esc(R.verdict)}</p>
+    ${R.note?`<p><span class="k">What in the text permitted it</span>${esc(R.note)}</p>`:""}`:"";
+
+  const logBlock=S.runlog.length?`<h2>Run log</h2>
+    <table><thead><tr><th>Date</th><th>Pass</th><th>Model and version</th><th>Material supplied</th></tr></thead><tbody>
+    ${S.runlog.map(r=>{const p=pass(r.pass);return `<tr><td>${esc(r.date||"—")}</td><td>${p?`Pass ${p.n}`:"—"}</td><td>${esc(r.model||"—")}</td><td>${esc(r.scope||"—")}</td></tr>`;}).join("")}
+    </tbody></table>`:"";
+
+  const pfBlock=`<h2>Pre-upload checks</h2><table><thead><tr><th>Question</th><th>Position</th><th>Note</th></tr></thead><tbody>
+    ${PREFLIGHT.map(p=>`<tr><td>${esc(p.q)}</td><td>${esc(S.preflight[p.k].state||"Not considered")}</td><td>${esc(S.preflight[p.k].note||"—")}</td></tr>`).join("")}
+    </tbody></table>`;
+
+  const html=`<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thesis audit summary — ${esc(m.title||m.student||"")}</title>
+<style>
+body{font-family:"IBM Plex Sans",-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#17212B;background:#fff;margin:0;padding:44px 24px;line-height:1.55;font-size:14.5px}
+.w{max-width:840px;margin:0 auto}
+h1{font-family:Spectral,Georgia,serif;font-size:27px;margin:0 0 4px;font-weight:600}
+h2{font-family:Spectral,Georgia,serif;font-size:20px;margin:38px 0 4px;padding-bottom:6px;border-bottom:1px solid #CFD8DE;font-weight:600}
+h3{font-family:Spectral,Georgia,serif;font-size:16px;margin:24px 0 8px;font-weight:600}
+.sub{color:#46596B;font-size:13.5px;margin:0 0 26px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 22px;font-size:13.5px;color:#46596B;border:1px solid #E1E8EB;background:#F4F7F8;border-radius:4px;padding:16px 18px;margin-bottom:8px}
+.meta b{color:#17212B;font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0 4px}
+th{text-align:left;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#46596B;font-weight:500;padding:8px 9px;background:#F4F7F8;border-bottom:1px solid #CFD8DE}
+td{padding:8px 9px;border-bottom:1px solid #E1E8EB;vertical-align:top}
+.f{border:1px solid #E1E8EB;border-left:3px solid #7B8C9B;border-radius:0 4px 4px 0;padding:14px 18px;margin-bottom:12px;background:#fff;break-inside:avoid}
+.f.revise{border-left-color:#8C2F39}.f.investigate{border-left-color:#9C6412}
+.f.dismissed{border-left-color:#7B8C9B;background:#F8FAFA}.f.open{border-left-color:#9C6412}
+.ft{font-weight:500;font-size:15px;font-family:Spectral,Georgia,serif}
+.fm{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#7B8C9B;margin-top:3px}
+.f p,p.body{margin:11px 0 0;font-size:13.5px;color:#2B3B48}
+.k{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:#7B8C9B;margin-bottom:2px}
+.scope{border:1px solid #E1E8EB;border-left:3px solid #9C6412;background:#F9F4EA;padding:16px 20px;border-radius:0 4px 4px 0;margin:22px 0 0}
+.scope h3{margin-top:0}
+.note{border:1px solid #E1E8EB;border-left:2px solid #7B8C9B;background:#F4F7F8;padding:13px 16px;font-size:13px;color:#46596B;margin-top:30px;border-radius:0 3px 3px 0}
+.none{color:#7B8C9B;font-size:13.5px;font-style:italic}
+@media print{body{padding:0}.w{max-width:none}}
+</style></head><body><div class="w">
+<h1>Thesis audit summary</h1>
+<p class="sub">A record of what a structured seven-pass audit surfaced, the judgements made about it, and what the method was not capable of seeing.</p>
+<div class="meta">
+  <div><b>Thesis</b><br>${esc(m.title||"—")}</div><div><b>Field</b><br>${esc(m.discipline||"—")}</div>
+  <div><b>Candidate</b><br>${esc(m.student||"—")}</div><div><b>Supervisor</b><br>${esc(m.supervisor||"—")}</div>
+  <div><b>Stage</b><br>${esc(m.stage||"—")}</div>
+  <div><b>Summary produced</b><br>${new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}</div>
+</div>
+
+<div class="scope">
+  <h3>What this audit does and does not establish</h3>
+  ${L.nullAck?`<p class="body"><span class="k">Position</span>${esc(L.nullAck)}</p>`:""}
+  ${L.nullNote?`<p class="body"><span class="k">Coverage</span>${esc(L.nullNote)}</p>`:""}
+  <p class="body"><span class="k">What this method would have missed</span>${esc(L.missed||"—")}</p>
+  ${scBlock}
+</div>
+
+<h2>Coverage by pass</h2>
+<table><thead><tr><th>Pass</th><th>Focus</th><th>State</th><th>Findings</th></tr></thead><tbody>${passRows}</tbody></table>
+
+<h2>Findings to act on</h2>
+${byDisp("revise").length?byDisp("revise").map(fBlock).join(""):`<p class="none">None recorded.</p>`}
+
+<h2>Findings to investigate</h2>
+${byDisp("investigate").length?byDisp("investigate").map(fBlock).join(""):`<p class="none">None recorded.</p>`}
+
+<h2>Findings considered and dismissed</h2>
+<p class="sub" style="margin-bottom:14px">Candidate problems examined against the manuscript and judged not to require change. The reasoning is included because it forms part of the audit.</p>
+${byDisp("dismissed").length?byDisp("dismissed").map(fBlock).join(""):`<p class="none">None recorded.</p>`}
+
+${openF.length?`<h2>Not yet adjudicated</h2>
+<p class="sub" style="margin-bottom:14px">Raised by the audit but not yet tested against the four diagnostic questions. Offered for discussion, not as conclusions.</p>
+${openF.map(fBlock).join("")}`:""}
+
+<h2>Ledgers</h2>
+${PASSES.filter(p=>p.ledger).map(p=>ledgerBlock(p.ledger)).join("")||`<p class="none">No ledger entries recorded.</p>`}
+${readingBlock}
+
+${pfBlock}
+${logBlock}
+
+<div class="note">This summary was produced with the Thesis Audit Workbench. The audit uses a language model for extraction, comparison and the construction of counterarguments. Every judgement recorded here — whether an apparent problem is genuine, whether it matters, and what should be done about it — was made by the candidate after locating the relevant passages in the manuscript. No text in this summary is model output. The method is suited to finding problems and not to ruling them out: what it did not report is not thereby absent.</div>
+</div></body></html>`;
+
+  download(slug()+"-summary.html",html,"text/html");
+  toast("Supervisor summary downloaded");
+}
+
+$("#btnSave").onclick=saveFile;
+$("#btnLoad").onclick=()=>$("#fileIn").click();
+window.addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+
+/* ============================================================
+   EMBEDDING
+   When the tool runs inside an iframe on a host page it reports its
+   height, so the host can size the frame instead of nesting scrollbars.
+   Add ?embed=flow to the src to release the sticky header and rail.
+   ============================================================ */
+(function(){
+  if(window.parent===window) return;
+  try{
+    if(new URLSearchParams(location.search).get("embed")==="flow")
+      document.documentElement.classList.add("framed");
+  }catch(e){}
+  let last=0;
+  const report=()=>{
+    const h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
+    if(Math.abs(h-last)>8){ last=h;
+      try{ window.parent.postMessage({thesisAuditHeight:h},"*"); }catch(e){} }
+  };
+  if(window.ResizeObserver) new ResizeObserver(report).observe(document.body);
+  window.addEventListener("load",report);
+  setInterval(report,700);
+})();
+
+render(); paintSave();
+</script>
+</body>
+</html>
